@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tdes"
+version = "0.1.3"
+description = "Training Data Execution System — a reproducible LLM pretraining data pipeline, built in micro-steps."
+readme = "README.md"
+requires-python = ">=3.11"
+
+# Only Epic 1.3 (fetch.py) needs these, and only on its real-fetch path.
+# Epics 1.1 and 1.2 are standard library alone, and the whole test suite
+# runs without either of these installed -- `datasets` and `huggingface_hub`
+# are imported lazily inside the branch that reaches the network.
+dependencies = [
+  "datasets>=2.19.0",
+  "huggingface_hub>=0.23.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[tool.setuptools]
+# Flat layout: these are top-level modules, not a package. Test modules are
+# deliberately absent -- they are run, not installed.
+py-modules = ["corpus_schema", "sources_manifest", "fetch"]
+
+[tool.pytest.ini_options]
+# Without this, `import corpus_schema` resolves only when pytest happens to
+# be invoked from the directory holding it. With it, `pytest` works from the
+# repo root and no `pip install -e .` is required just to run the tests.
+pythonpath = ["."]
+testpaths = ["."]
+addopts = "-q"
