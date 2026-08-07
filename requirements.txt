@@ -1,0 +1,3 @@
+# Epic 1.1 needs only the standard library; pytest for the tests.
+# numpy and torch arrive at the training feature (Feature 10); pinned then.
+pytest>=8,<9
