@@ -122,10 +122,10 @@ def test_every_source_declares_a_text_field() -> None:
     assert all(s.text_field.strip() for s in SOURCES)
 
 
-def test_code_github_reads_the_content_column() -> None:
-    """codeparrot/github-code-clean puts the source under "content"."""
+def test_code_github_reads_the_code_column() -> None:
+    """The code source (CodeSearchNet) puts the source under "code"."""
     code = next(s for s in SOURCES if s.source_id == "code-github")
-    assert code.text_field == "content"
+    assert code.text_field == "code"
 
 
 def test_every_other_source_reads_text() -> None:

@@ -242,13 +242,13 @@ def test_no_network_libraries_were_imported() -> None:
 
 @pytest.fixture
 def code_source():
-    """code-github, pinned and capped. Its text lives under "content"."""
+    """code-github, pinned and capped. Its text lives under "code"."""
     code = next(s for s in SOURCES if s.source_id == "code-github")
     return dataclasses.replace(code, target_tokens=TARGET, revision="pinned-test")
 
 
 def fake_code_rows(n: int = N_DOCS) -> list[dict[str, str]]:
-    return [{"content": f"def f{i:02d}(x):\n    return x * {i}\n"} for i in range(n)]
+    return [{"code": f"def f{i:02d}(x):\n    return x * {i}\n"} for i in range(n)]
 
 
 def fake_manifest():
@@ -299,22 +299,22 @@ def test_content_column_source_fetches(tmp_path, code_source) -> None:
 
 
 def test_content_source_still_accepts_plain_strings(tmp_path, code_source) -> None:
-    texts = [r["content"] for r in fake_code_rows()]
+    texts = [r["code"] for r in fake_code_rows()]
     summary = fetch_source(code_source, out_root=str(tmp_path), doc_iter=texts)
     assert summary["doc_count"] > 0
 
 
 def test_missing_declared_column_raises(tmp_path, code_source) -> None:
-    """Rows carry "text", but this source declares "content"."""
-    with pytest.raises(ValueError, match="content"):
+    """Rows carry "text", but this source declares "code"."""
+    with pytest.raises(ValueError, match="code"):
         fetch_source(
             code_source, out_root=str(tmp_path), doc_iter=[{"text": "def f(): pass"}]
         )
 
 
 def test_non_string_column_value_raises(tmp_path, code_source) -> None:
-    with pytest.raises(ValueError, match="content"):
-        fetch_source(code_source, out_root=str(tmp_path), doc_iter=[{"content": 123}])
+    with pytest.raises(ValueError, match="code"):
+        fetch_source(code_source, out_root=str(tmp_path), doc_iter=[{"code": 123}])
 
 
 def test_text_field_is_recorded_in_the_log(tmp_path, code_source) -> None:
@@ -323,7 +323,7 @@ def test_text_field_is_recorded_in_the_log(tmp_path, code_source) -> None:
     record = json.loads(
         open(tmp_path / "fetch_log.jsonl", encoding="utf-8").readline()
     )
-    assert record["text_field"] == "content"
+    assert record["text_field"] == "code"
 
 
 def test_fetch_all_writes_every_source(tmp_path) -> None:

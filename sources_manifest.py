@@ -88,18 +88,21 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
     LaneSource(
         source_id="code-github",
         lane="code",
-        dataset="codeparrot/github-code-clean",
+        dataset="Nan-Do/code-search-net-python",
         config="",
-        text_field="content",
+        text_field="code",
         revision="",
-        license="permissive-only (MIT/Apache/BSD filtered)",
+        license="MIT (CodeSearchNet; source from permissively-licensed repos)",
         provenance_tier="T2",
         target_tokens=2_000_000,
         gated=False,
         notes=(
-            "Exact permissive+ungated source confirmed at fetch (1.3). The "
-            "licence string here describes the intended filter, not a "
-            "verified per-file result."
+            "Real Python source functions (CodeSearchNet). Chosen at fetch: the "
+            "originally-declared codeparrot/github-code-clean is a script-based "
+            "loader that current `datasets` versions reject, and The Stack "
+            "variants are gated; this parquet, ungated, permissive source "
+            "replaces it under the ungated+permissive rule. Text lives in the "
+            "'code' column."
         ),
     ),
     LaneSource(
