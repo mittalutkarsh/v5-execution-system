@@ -49,7 +49,11 @@ class LaneSource:
     """One dataset declared as a feed for one lane.
 
     `dataset` and `config` name the source in the upstream catalogue; nothing
-    in this module resolves them. `gated` records whether the upstream
+    in this module resolves them. `text_field` names the column the text
+    actually lives in -- FineWeb and Wikipedia use "text", but
+    codeparrot/github-code-clean uses "content", and guessing wrong fails at
+    fetch time rather than here. It has no default on purpose: a new source
+    must state where its text is. `gated` records whether the upstream
     requires accepting terms or authenticating -- 1.3 fetches ungated sources
     only, so a gated entry is rejected here rather than failing mid-download.
     """
@@ -58,6 +62,7 @@ class LaneSource:
     lane: str               # one of LANES
     dataset: str            # upstream dataset name, never resolved here
     config: str             # upstream config; carries the language. May be ""
+    text_field: str         # upstream COLUMN holding the text. Not always "text"
     revision: str           # pinned at fetch in 1.3. "" = not yet pinned
     license: str            # as declared upstream
     provenance_tier: str    # one of PROVENANCE_TIERS
@@ -72,6 +77,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="web",
         dataset="HuggingFaceFW/fineweb",
         config="sample-10BT",
+        text_field="text",
         revision="",
         license="ODC-BY-1.0",
         provenance_tier="T2",
@@ -84,6 +90,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="code",
         dataset="codeparrot/github-code-clean",
         config="",
+        text_field="content",
         revision="",
         license="permissive-only (MIT/Apache/BSD filtered)",
         provenance_tier="T2",
@@ -100,6 +107,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="math",
         dataset="open-web-math/open-web-math",
         config="",
+        text_field="text",
         revision="",
         license="ODC-BY-1.0",
         provenance_tier="T2",
@@ -112,6 +120,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="indic",
         dataset="wikimedia/wikipedia",
         config="20231101.hi",
+        text_field="text",
         revision="",
         license="CC-BY-SA-3.0",
         provenance_tier="T1",
@@ -124,6 +133,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="indic",
         dataset="wikimedia/wikipedia",
         config="20231101.bn",
+        text_field="text",
         revision="",
         license="CC-BY-SA-3.0",
         provenance_tier="T1",
@@ -136,6 +146,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="indic",
         dataset="wikimedia/wikipedia",
         config="20231101.ta",
+        text_field="text",
         revision="",
         license="CC-BY-SA-3.0",
         provenance_tier="T1",
@@ -148,6 +159,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="multilingual",
         dataset="wikimedia/wikipedia",
         config="20231101.es",
+        text_field="text",
         revision="",
         license="CC-BY-SA-3.0",
         provenance_tier="T1",
@@ -160,6 +172,7 @@ SOURCES: Final[tuple[LaneSource, ...]] = (
         lane="multilingual",
         dataset="wikimedia/wikipedia",
         config="20231101.fr",
+        text_field="text",
         revision="",
         license="CC-BY-SA-3.0",
         provenance_tier="T1",
@@ -220,6 +233,11 @@ def validate_sources(sources: Sequence[LaneSource]) -> tuple[LaneSource, ...]:
             )
         if not isinstance(source.dataset, str) or not source.dataset.strip():
             raise ValueError(f"{where}: dataset must be a non-empty string")
+        if not isinstance(source.text_field, str) or not source.text_field.strip():
+            raise ValueError(
+                f"{where}: text_field must be a non-empty string -- it names "
+                f"the upstream column the text is read from"
+            )
         if not isinstance(source.license, str) or not source.license.strip():
             raise ValueError(
                 f"{where}: license must be a non-empty string -- an unlicensed "

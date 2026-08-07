@@ -1,4 +1,4 @@
-"""Epic 1.3 tests. Fully offline -- neither `datasets` nor `huggingface_hub`
+"""Epics 1.3-1.7 tests. Fully offline -- neither `datasets` nor `huggingface_hub`
 is imported, installed, or reachable. Run with: pytest -q
 """
 
@@ -12,8 +12,8 @@ import sys
 import pytest
 
 from corpus_schema import Document, validate_document
-from fetch import estimate_tokens, fetch_source
-from sources_manifest import SOURCES
+from fetch import estimate_tokens, fetch_all, fetch_source
+from sources_manifest import SOURCES, LaneSource
 
 TARGET = 200
 N_DOCS = 50
@@ -66,7 +66,7 @@ def test_estimate_tokens_counts_bytes_not_characters() -> None:
 def test_estimate_tokens_is_monotonic() -> None:
     previous = 0
     for length in range(0, 400, 7):
-        current = estimate_tokens("x" * length)
+        current = estimate_tokens("a" * length)
         assert current >= previous
         previous = current
 
@@ -233,3 +233,132 @@ def test_unpinned_injected_fetch_is_refused(tmp_path, source) -> None:
 def test_no_network_libraries_were_imported() -> None:
     assert "datasets" not in sys.modules
     assert "huggingface_hub" not in sys.modules
+
+
+# --------------------------------------------------------------------------
+# Epics 1.4-1.7: per-source text column, and fetching every lane
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def code_source():
+    """code-github, pinned and capped. Its text lives under "content"."""
+    code = next(s for s in SOURCES if s.source_id == "code-github")
+    return dataclasses.replace(code, target_tokens=TARGET, revision="pinned-test")
+
+
+def fake_code_rows(n: int = N_DOCS) -> list[dict[str, str]]:
+    return [{"content": f"def f{i:02d}(x):\n    return x * {i}\n"} for i in range(n)]
+
+
+def fake_manifest():
+    """A COMPLETE fake manifest: one source per lane, totals summing to the pool.
+
+    Five sources rather than two, because fetch_all calls validate_sources,
+    which requires every lane covered and the grand total inside tolerance --
+    so a two-source manifest can never pass. See the subset test below.
+    """
+    shared = dict(
+        revision="pinned-test",
+        license="CC0-1.0",
+        provenance_tier="T1",
+        text_field="text",
+        config="",
+        gated=False,
+        notes="",
+    )
+    rows = [
+        ("fake-web", "web", 4_000_000),
+        ("fake-code", "code", 2_000_000),
+        ("fake-math", "math", 1_200_000),
+        ("fake-indic", "indic", 2_200_000),
+        ("fake-mling", "multilingual", 600_000),
+    ]
+    return tuple(
+        LaneSource(
+            source_id=sid, lane=lane, dataset=f"fake/{sid}",
+            target_tokens=target, **shared,
+        )
+        for sid, lane, target in rows
+    )
+
+
+def test_content_column_source_fetches(tmp_path, code_source) -> None:
+    summary = fetch_source(
+        code_source, out_root=str(tmp_path), doc_iter=fake_code_rows()
+    )
+    assert summary["cached"] is False
+    assert summary["doc_count"] > 0
+    assert summary["est_tokens"] >= TARGET
+
+    for row in read_docs(summary["path"]):
+        document = Document(**row)
+        assert validate_document(document) is document
+        assert document.lane == "code"
+        assert document.text.startswith("def f")
+
+
+def test_content_source_still_accepts_plain_strings(tmp_path, code_source) -> None:
+    texts = [r["content"] for r in fake_code_rows()]
+    summary = fetch_source(code_source, out_root=str(tmp_path), doc_iter=texts)
+    assert summary["doc_count"] > 0
+
+
+def test_missing_declared_column_raises(tmp_path, code_source) -> None:
+    """Rows carry "text", but this source declares "content"."""
+    with pytest.raises(ValueError, match="content"):
+        fetch_source(
+            code_source, out_root=str(tmp_path), doc_iter=[{"text": "def f(): pass"}]
+        )
+
+
+def test_non_string_column_value_raises(tmp_path, code_source) -> None:
+    with pytest.raises(ValueError, match="content"):
+        fetch_source(code_source, out_root=str(tmp_path), doc_iter=[{"content": 123}])
+
+
+def test_text_field_is_recorded_in_the_log(tmp_path, code_source) -> None:
+    """It changes the bytes, so it belongs in the provenance record."""
+    fetch_source(code_source, out_root=str(tmp_path), doc_iter=fake_code_rows())
+    record = json.loads(
+        open(tmp_path / "fetch_log.jsonl", encoding="utf-8").readline()
+    )
+    assert record["text_field"] == "content"
+
+
+def test_fetch_all_writes_every_source(tmp_path) -> None:
+    manifest = fake_manifest()
+    doc_iters = {
+        s.source_id: [{"text": f"{s.source_id} document {i}."} for i in range(4)]
+        for s in manifest
+    }
+    summaries = fetch_all(manifest, out_root=str(tmp_path), doc_iters=doc_iters)
+
+    assert len(summaries) == len(manifest)
+    assert [s["source_id"] for s in summaries] == [s.source_id for s in manifest]
+    for summary in summaries:
+        assert summary["cached"] is False
+        assert summary["doc_count"] == 4
+        docs = read_docs(summary["path"])
+        assert len(docs) == 4
+        for row in docs:
+            assert validate_document(Document(**row)) is not None
+
+
+def test_fetch_all_is_cached_on_a_second_pass(tmp_path) -> None:
+    manifest = fake_manifest()
+    doc_iters = {s.source_id: [{"text": "hello there."}] for s in manifest}
+    fetch_all(manifest, out_root=str(tmp_path), doc_iters=doc_iters)
+    again = fetch_all(
+        manifest,
+        out_root=str(tmp_path),
+        doc_iters={s.source_id: exploding_iter() for s in manifest},
+    )
+    assert all(s["cached"] is True for s in again)
+
+
+def test_fetch_all_rejects_an_incomplete_manifest(tmp_path) -> None:
+    """A two-source subset cannot pass validate_sources -- lanes are missing."""
+    two = fake_manifest()[:2]
+    with pytest.raises(ValueError, match="lanes with no source"):
+        fetch_all(two, out_root=str(tmp_path), doc_iters={})

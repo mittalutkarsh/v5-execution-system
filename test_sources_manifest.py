@@ -111,3 +111,36 @@ def test_total_outside_tolerance_raises() -> None:
 def test_empty_manifest_raises() -> None:
     with pytest.raises(ValueError, match="empty"):
         validate_sources(())
+
+
+# --------------------------------------------------------------------------
+# Epics 1.4-1.7: the upstream text column
+# --------------------------------------------------------------------------
+
+
+def test_every_source_declares_a_text_field() -> None:
+    assert all(s.text_field.strip() for s in SOURCES)
+
+
+def test_code_github_reads_the_content_column() -> None:
+    """codeparrot/github-code-clean puts the source under "content"."""
+    code = next(s for s in SOURCES if s.source_id == "code-github")
+    assert code.text_field == "content"
+
+
+def test_every_other_source_reads_text() -> None:
+    others = [s for s in SOURCES if s.source_id != "code-github"]
+    assert others, "expected sources besides code-github"
+    assert all(s.text_field == "text" for s in others)
+
+
+def test_empty_text_field_raises() -> None:
+    broken = (dataclasses.replace(SOURCES[0], text_field=""),) + SOURCES[1:]
+    with pytest.raises(ValueError, match="text_field"):
+        validate_sources(broken)
+
+
+def test_whitespace_text_field_raises() -> None:
+    broken = (dataclasses.replace(SOURCES[0], text_field="   "),) + SOURCES[1:]
+    with pytest.raises(ValueError, match="text_field"):
+        validate_sources(broken)

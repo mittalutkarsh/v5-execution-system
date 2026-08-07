@@ -1,6 +1,10 @@
-"""Epic 1.3 — the first real fetch, for ONE source (web-fineweb).
+"""Epics 1.3-1.7 — fetching sources to disk, one lane or all of them.
 
-The other lanes are deliberately not fetched here.
+`fetch_source` materialises a single source; `fetch_all` walks the manifest.
+Upstream datasets do not agree on which column holds the text -- FineWeb and
+Wikipedia use "text", codeparrot/github-code-clean uses "content" -- so each
+source declares its own `text_field` and extraction reads that column rather
+than assuming one.
 
 Design: every part of this module that matters -- capping, id minting,
 validation, JSON writing, hashing, logging -- runs with no network at all,
@@ -21,12 +25,12 @@ import hashlib
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 from corpus_schema import Document, validate_document
 from sources_manifest import SOURCES, LaneSource, validate_sources
 
-__all__ = ["estimate_tokens", "fetch_source", "main"]
+__all__ = ["estimate_tokens", "fetch_source", "fetch_all", "main"]
 
 # One JSON object per line, written the same way every time. sort_keys makes
 # field order independent of dataclass field order; separators drop the
@@ -52,21 +56,33 @@ def estimate_tokens(text: str) -> int:
     return max(1, len(text.encode("utf-8")) // 4)
 
 
-def _extract_text(item: Any, *, index: int) -> str:
-    """Accept either a plain string or a mapping carrying a "text" key."""
+def _extract_text(item: Any, *, text_field: str, index: int) -> str:
+    """Pull the text out of one upstream row.
+
+    A plain string is taken as-is. A mapping is read at `text_field`, which
+    the source declares -- an empty value is returned rather than rejected,
+    because the caller counts blanks as skips. A missing key or a non-string
+    value is a manifest bug, not a data blip, so it raises: the alternative
+    is silently writing zero documents from a source whose column was
+    misnamed.
+    """
     if isinstance(item, str):
         return item
     if isinstance(item, dict):
-        text = item.get("text")
-        if isinstance(text, str):
-            return text
-        raise ValueError(
-            f"item {index}: dict has no string 'text' key, got "
-            f"{type(text).__name__}"
-        )
+        if text_field not in item:
+            raise ValueError(
+                f"item {index}: no {text_field!r} column; row has "
+                f"{sorted(item)}"
+            )
+        value = item[text_field]
+        if not isinstance(value, str):
+            raise ValueError(
+                f"item {index}: column {text_field!r} must hold a str, got "
+                f"{type(value).__name__}"
+            )
+        return value
     raise ValueError(
-        f"item {index}: expected str or dict with 'text', got "
-        f"{type(item).__name__}"
+        f"item {index}: expected str or dict, got {type(item).__name__}"
     )
 
 
@@ -113,8 +129,12 @@ def _resolve_revision(source: LaneSource, doc_iter: Iterable[Any] | None) -> str
     return HfApi().dataset_info(source.dataset).sha
 
 
-def _stream_hf(source: LaneSource, revision: str) -> Iterator[str]:
-    """Stream `text` fields from the pinned upstream dataset."""
+def _stream_hf(source: LaneSource, revision: str) -> Iterator[Any]:
+    """Stream raw rows from the pinned upstream dataset.
+
+    Rows are yielded unextracted so that one code path -- `_extract_text` --
+    handles the column choice for both real and injected streams.
+    """
     from datasets import load_dataset  # lazy: tests never import this
 
     dataset = load_dataset(
@@ -125,7 +145,7 @@ def _stream_hf(source: LaneSource, revision: str) -> Iterator[str]:
         revision=revision,
     )
     for row in dataset:
-        yield row["text"]
+        yield row
 
 
 def fetch_source(
@@ -181,7 +201,9 @@ def fetch_source(
     # same fetch would hash differently on a different machine.
     with doc_path.open("w", encoding="utf-8", newline="\n") as handle:
         for index, item in enumerate(stream):
-            text = _extract_text(item, index=index)
+            text = _extract_text(
+                item, text_field=source.text_field, index=index
+            )
             if not text.strip():
                 # Real web dumps contain blanks. An empty document fails
                 # validate_document, and dying at document 300,000 of a 4M
@@ -219,6 +241,7 @@ def fetch_source(
                     "source_id": source.source_id,
                     "dataset": source.dataset,
                     "config": source.config,
+                    "text_field": source.text_field,
                     "revision": revision,
                     "path": str(doc_path),
                     "bytes": file_bytes,
@@ -247,12 +270,43 @@ def fetch_source(
     }
 
 
+def fetch_all(
+    sources: Sequence[LaneSource],
+    *,
+    out_root: str = "data/raw",
+    force: bool = False,
+    doc_iters: Mapping[str, Iterable[Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch every source in `sources`, returning one summary each.
+
+    The manifest is validated first, so a broken declaration fails in a
+    second rather than after hours of downloading. Note that this validates
+    the manifest AS A WHOLE -- lane coverage and the pool total included --
+    so `sources` must be a complete manifest, not a subset.
+
+    `doc_iters` maps source_id to an injected stream and exists for tests; in
+    production it is None. A source absent from the mapping falls through to
+    the real network path, so a partial mapping will still download.
+
+    Fail-fast: an exception from any source propagates and later sources are
+    not attempted. Sources already fetched stay cached, so a rerun resumes.
+    """
+    validate_sources(sources)
+    summaries: list[dict[str, Any]] = []
+    for source in sources:
+        injected = doc_iters.get(source.source_id) if doc_iters else None
+        summaries.append(
+            fetch_source(
+                source, out_root=out_root, doc_iter=injected, force=force
+            )
+        )
+    return summaries
+
+
 def main() -> int:
-    """Real fetch of web-fineweb only. This is the branch that hits the network."""
-    validate_sources(SOURCES)
-    source = next(s for s in SOURCES if s.source_id == "web-fineweb")
-    summary = fetch_source(source)
-    print(json.dumps(summary, indent=2, sort_keys=True))
+    """Real fetch of every lane. This is the branch that hits the network."""
+    summaries = fetch_all(SOURCES)
+    print(json.dumps(summaries, indent=2, sort_keys=True))
     return 0
 
 
