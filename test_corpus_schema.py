@@ -56,6 +56,30 @@ def test_chauvinism_not_none_raises() -> None:
         validate_contrastive(pair)
 
 
+def test_eval_requires_high_tier() -> None:
+    """Rule 3: an eval document must be tier T0 or T1 (untrusted eval is rejected)."""
+    low_trust = Document(
+        id="doc-eval-lowtrust",
+        lane="web",
+        provenance_tier="T2",       # eval from an untrusted crawl
+        split="eval",
+        source="somewhere",
+        text="some eval text",
+    )
+    with pytest.raises(ValueError, match="eval"):
+        validate_document(low_trust)
+
+    high_trust = Document(
+        id="doc-eval-ok",
+        lane="web",
+        provenance_tier="T1",
+        split="eval",
+        source="somewhere",
+        text="some eval text",
+    )
+    assert validate_document(high_trust) is high_trust
+
+
 def test_records_are_frozen() -> None:
     """Records are facts about the data, not mutable buffers."""
     with pytest.raises(dataclasses.FrozenInstanceError):

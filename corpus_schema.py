@@ -70,10 +70,12 @@ LANES: Final[frozenset[str]] = frozenset(
 #   2. Failing eval decontamination drops a document. It does not demote it.
 #   3. split="eval" requires T0 or T1.
 #
-# None of this is enforced here -- this file only checks that the string is
-# one of the four. Enforcement needs a source registry, which is a later
-# step. Revise the wording freely; the label set is what other code depends
-# on, and the four labels are not expected to change.
+# Of these, rule 3 IS enforced here (validate_document: eval requires T0/T1) --
+# it needs only the document's own split and tier, no registry. Rules 1 (tier
+# ceiling) and 2 (decontamination drop) need a source registry and are enforced
+# in a later step. Otherwise this file only checks that each string is one of
+# the four labels; the label set is what other code depends on and is not
+# expected to change.
 PROVENANCE_TIERS: Final[frozenset[str]] = frozenset({"T0", "T1", "T2", "T3"})
 SPLITS: Final[frozenset[str]] = frozenset({"train", "eval"})
 
@@ -181,6 +183,15 @@ def validate_document(doc: Document) -> Document:
     _require_member(doc.split, "split", SPLITS, where=where)
     _require_str(doc.source, "source", where=where)
     _require_str(doc.text, "text", where=where)
+
+    # Rule 3: eval data must be high-trust (see PROVENANCE_TIERS). This is a
+    # per-document invariant -- it reads only this document's own split and
+    # tier, so it belongs here rather than in a later registry step.
+    if doc.split == "eval" and doc.provenance_tier not in {"T0", "T1"}:
+        raise ValueError(
+            f"{where}: split='eval' requires provenance_tier T0 or T1, "
+            f"got {doc.provenance_tier!r}"
+        )
     return doc
 
 
