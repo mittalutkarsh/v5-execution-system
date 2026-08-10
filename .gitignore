@@ -6,3 +6,4 @@ venv/
 # runtime artifacts (born later)
 submission_artifacts/
 data/raw/
+data/eval/
