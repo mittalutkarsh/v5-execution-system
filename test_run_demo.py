@@ -67,7 +67,8 @@ def corpus(tmp_path, fixture_sources):
 
 
 def do_run(corpus, artifacts_root):
-    code = run(**corpus, artifacts_root=str(artifacts_root))
+    clean_root = str(artifacts_root) + "-clean"
+    code = run(**corpus, artifacts_root=str(artifacts_root), clean_root=clean_root)
     return code, (artifacts_root / "run.log").read_text(encoding="utf-8")
 
 
@@ -192,9 +193,16 @@ def test_log_mentions_the_summary_by_basename_only(tmp_path, corpus) -> None:
 def test_two_runs_produce_byte_identical_logs(tmp_path, corpus) -> None:
     """Different artifact roots, same bytes -- no clock, no paths."""
     a, b = tmp_path / "artifacts-a", tmp_path / "deeper" / "artifacts-b"
-    run(**corpus, artifacts_root=str(a))
-    run(**corpus, artifacts_root=str(b))
+    run(**corpus, artifacts_root=str(a), clean_root=str(tmp_path / "clean-a"))
+    run(**corpus, artifacts_root=str(b), clean_root=str(tmp_path / "clean-b"))
     assert (a / "run.log").read_bytes() == (b / "run.log").read_bytes()
+
+
+def test_run_log_has_the_clean_pass_line(tmp_path, corpus) -> None:
+    _, text = do_run(corpus, tmp_path / "artifacts")
+    assert any(line.startswith("[PASS] corpus_cleaned") for line in text.splitlines())
+    assert "[INFO] clean_stage stage=normalize" in text
+    assert "[INFO] clean_stage stage=decontam" in text
 
 
 def test_run_creates_the_manifests_dir(tmp_path, corpus) -> None:

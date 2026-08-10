@@ -22,12 +22,20 @@ import json
 from pathlib import Path
 from typing import Any, Final, Sequence
 
+from clean_pipeline import clean_corpus
 from corpus_loader import corpus_counts
 from corpus_report import write_corpus_summary
 from corpus_schema import LANES
 from sources_manifest import SOURCES, LaneSource
 
-__all__ = ["ARTIFACTS_ROOT", "RunLog", "stage_load_corpus", "run", "main"]
+__all__ = [
+    "ARTIFACTS_ROOT",
+    "RunLog",
+    "stage_load_corpus",
+    "stage_clean_corpus",
+    "run",
+    "main",
+]
 
 ARTIFACTS_ROOT: Final[str] = "submission_artifacts"
 _RUN_LOG = "run.log"
@@ -125,12 +133,43 @@ def stage_load_corpus(
     return counts
 
 
+def stage_clean_corpus(
+    log: RunLog,
+    *,
+    raw_root: str,
+    eval_root: str,
+    sources: Sequence[LaneSource],
+    clean_root: str,
+) -> dict[str, Any]:
+    """Stage 2: clean the train corpus and report each stage's drops."""
+    report = clean_corpus(
+        raw_root=raw_root, eval_root=eval_root, sources=sources, clean_root=clean_root
+    )
+    for s in report["stages"]:
+        log.info(
+            "clean_stage",
+            stage=s["stage"],
+            input=s["input"],
+            kept=s["kept"],
+            dropped=s["dropped"],
+        )
+    log.info("pii_redactions", n=report["pii_redactions"])
+    totals = report["totals"]
+    log.passed(
+        "corpus_cleaned",
+        kept=totals["train_out"],
+        dropped=totals["dropped"],
+    )
+    return report
+
+
 def run(
     *,
     raw_root: str = "data/raw",
     eval_root: str = "data/eval",
     sources: Sequence[LaneSource] = SOURCES,
     artifacts_root: str = ARTIFACTS_ROOT,
+    clean_root: str = "data/clean",
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -146,6 +185,13 @@ def run(
             eval_root=eval_root,
             sources=sources,
             summary_path=manifests / _SUMMARY_FILE,
+        )
+        stage_clean_corpus(
+            log,
+            raw_root=raw_root,
+            eval_root=eval_root,
+            sources=sources,
+            clean_root=clean_root,
         )
         log.info("run_complete")
     finally:
