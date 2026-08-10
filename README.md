@@ -17,7 +17,8 @@ in the companion tracker (`session6_plan.md` / the Assignment page).
 | 1 · Collecting data | 1.4–1.7 fetch code / math / indic / multilingual | ✅ done |
 | 1 · Collecting data | 1.8 author contrastive pairs (36) | ✅ done |
 | 1 · Collecting data | 1.9 carve eval split | ✅ done |
-| 1 · Collecting data | 1.10 corpus loader | ⏳ next |
+| 1 · Collecting data | 1.10 corpus loader | ✅ done |
+| 1 · Collecting data | 1.11 corpus summary report | ⏳ next |
 
 The full ~10M-token pool is fetched and hash-verified across all five lanes
 (web 4.0M, code 2.0M, math 1.2M, indic 2.2M, multilingual 0.6M; 13,087 docs).
@@ -32,7 +33,8 @@ sources_manifest.py     # 1.2 — LaneSource, SOURCES (10M pool), validate_sourc
 fetch.py                # 1.3–1.7 — fetch_source / fetch_all: stream -> documents.jsonl + fetch_log + sha256
 contrastive_pairs.py    # 1.8 — 36 hand-authored Indian-vantage vs Western-default pairs
 eval_split.py           # 1.9 — select_eval / carve_eval: deterministic held-out eval (T1 only)
-test_*.py               # invariant tests (88 passing, fully offline)
+corpus_loader.py        # 1.10 — iter_documents / corpus_counts / load_corpus (eval routed by manifest)
+test_*.py               # invariant tests (104 passing, fully offline)
 pyproject.toml          # deps + pytest config (pythonpath=".")
 ```
 
@@ -40,7 +42,7 @@ pyproject.toml          # deps + pytest config (pythonpath=".")
 
 ```bash
 pip install pytest
-pytest                 # 88 tests; datasets / huggingface_hub not required
+pytest                 # 104 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)
