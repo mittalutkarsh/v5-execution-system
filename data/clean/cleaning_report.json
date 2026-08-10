@@ -480,7 +480,7 @@
     }
   ],
   "kind": "cleaning_report",
-  "pii_redactions": 5635,
+  "pii_redactions": 5546,
   "stages": [
     {
       "dropped": 0,
@@ -510,7 +510,7 @@
       "dropped": 0,
       "input": 13036,
       "kept": 13036,
-      "redactions": 5635,
+      "redactions": 5546,
       "stage": "pii"
     },
     {

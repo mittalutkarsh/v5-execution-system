@@ -146,6 +146,18 @@ def test_dedup_near_is_deterministic() -> None:
     assert a == b
 
 
+def test_near_dup_survivor_is_the_earliest_match() -> None:
+    """A doc near two earlier survivors names the lowest-index one, regardless of
+    candidate-set iteration order (guards the sorted(candidates) determinism fix)."""
+    a = "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november"
+    b = "oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu one two three"
+    docs = [row("a", a), row("b", b), row("c", a + " " + b)]  # c overlaps both a and b
+    kept, drops = dedup_near(docs, threshold=0.3)
+    assert {d["id"] for d in kept} == {"a", "b"}
+    assert [d["id"] for d in drops] == ["c"]
+    assert drops[0]["near"] == "a"   # a is index 0 -> earliest survivor wins
+
+
 # --------------------------------------------------------------------------
 # 2.5 PII
 # --------------------------------------------------------------------------
@@ -167,6 +179,20 @@ def test_pii_is_idempotent() -> None:
     once, _ = scrub_pii("mail me at bob@site.org")
     twice, n = scrub_pii(once)
     assert twice == once and n == 0
+
+
+def test_pii_phone_does_not_span_newlines() -> None:
+    """A newline-separated number column (math/code content) must survive intact:
+    the phone pattern matches within a single line only."""
+    column = "Consider the sequence:\n1\n2\n3\n4\n5\n6\n7\n8\nwhich sums to 36."
+    out, n = scrub_pii(column)
+    assert n == 0 and out == column
+
+
+def test_pii_still_redacts_a_single_line_phone() -> None:
+    """The newline restriction must not stop matching a real one-line number."""
+    out, n = scrub_pii("call +91 98765 43210 today")
+    assert n == 1 and PHONE_PLACEHOLDER in out
 
 
 # --------------------------------------------------------------------------

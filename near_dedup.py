@@ -102,9 +102,12 @@ def dedup_near(
 
         survivor = None
         best = 0.0
-        for idx in candidates:
+        # sort the candidate indices so the recorded survivor is independent of
+        # set iteration order -> the cleaning report is byte-identical across
+        # machines even when a doc ties two earlier survivors at equal Jaccard.
+        for idx in sorted(candidates):
             j = est_jaccard(sig, sigs[idx])
-            if j >= threshold and j >= best:
+            if j >= threshold and j > best:
                 best, survivor = j, idx
 
         if survivor is not None:

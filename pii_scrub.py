@@ -19,10 +19,13 @@ EMAIL_PLACEHOLDER = "[EMAIL]"
 PHONE_PLACEHOLDER = "[PHONE]"
 
 _EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
-# A run of digits with separators (spaces, dots, dashes, parens), optionally a
-# leading +. The 7-digit floor is enforced in the callback, so short numbers
-# like a year (2024) or a chapter (7) are left alone.
-_PHONE = re.compile(r"(?<!\w)\+?\d[\d\s().\-]{5,}\d(?!\w)")
+# A run of digits with separators (spaces, tabs, dots, dashes, parens),
+# optionally a leading +. The separator class deliberately EXCLUDES newlines: a
+# phone number lives on one line, and matching across "\n" would swallow whole
+# multi-line number columns (equations, data tables) in the math/code lanes. The
+# 7-digit floor is enforced in the callback, so short numbers like a year (2024)
+# or a chapter (7) are left alone.
+_PHONE = re.compile(r"(?<!\w)\+?\d[\d \t().\-]{5,}\d(?!\w)")
 
 
 def scrub_pii(text: str) -> tuple[str, int]:

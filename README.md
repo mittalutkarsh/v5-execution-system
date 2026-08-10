@@ -48,7 +48,7 @@ near_dedup.py           # 2.4 — MinHash + LSH near-duplicate removal (pure Pyt
 pii_scrub.py            # 2.5 — scrub_pii (email/phone -> placeholders, idempotent)
 decontaminate.py        # 2.6 — n-gram decontamination of train vs eval + contrastive
 clean_pipeline.py       # 2.7 — clean_corpus: compose 2.1-2.6 -> data/clean + cleaning_report
-test_*.py               # invariant tests (162 passing, fully offline)
+test_*.py               # invariant tests (165 passing, fully offline)
 pyproject.toml          # deps + pytest config (pythonpath=".")
 ```
 
@@ -56,7 +56,7 @@ pyproject.toml          # deps + pytest config (pythonpath=".")
 
 ```bash
 pip install pytest
-pytest                 # 162 tests; datasets / huggingface_hub not required
+pytest                 # 165 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)
