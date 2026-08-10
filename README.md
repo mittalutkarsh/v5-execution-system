@@ -19,7 +19,9 @@ in the companion tracker (`session6_plan.md` / the Assignment page).
 | 1 · Collecting data | 1.9 carve eval split | ✅ done |
 | 1 · Collecting data | 1.10 corpus loader | ✅ done |
 | 1 · Collecting data | 1.11 corpus summary report | ✅ done |
-| 1 · Collecting data | 1.12 wire load_corpus into run_demo | ⏳ next |
+| 1 · Collecting data | 1.12 wire load_corpus into run_demo | ✅ done |
+| **1 · Collecting data — COMPLETE** | | ✅ |
+| 2 · Clean & filter | 2.1 normalize + content hash | ⏳ next |
 
 The full ~10M-token pool is fetched and hash-verified across all five lanes
 (web 4.0M, code 2.0M, math 1.2M, indic 2.2M, multilingual 0.6M; 13,087 docs).
@@ -36,7 +38,8 @@ contrastive_pairs.py    # 1.8 — 36 hand-authored Indian-vantage vs Western-def
 eval_split.py           # 1.9 — select_eval / carve_eval: deterministic held-out eval (T1 only)
 corpus_loader.py        # 1.10 — iter_documents / corpus_counts / load_corpus (eval routed by manifest)
 corpus_report.py        # 1.11 — build/write corpus_summary.json (deterministic, regenerable)
-test_*.py               # invariant tests (119 passing, fully offline)
+run_demo.py             # 1.12 — one-command runner: RunLog + load-corpus stage -> submission_artifacts/
+test_*.py               # invariant tests (135 passing, fully offline)
 pyproject.toml          # deps + pytest config (pythonpath=".")
 ```
 
@@ -44,7 +47,7 @@ pyproject.toml          # deps + pytest config (pythonpath=".")
 
 ```bash
 pip install pytest
-pytest                 # 119 tests; datasets / huggingface_hub not required
+pytest                 # 135 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)
