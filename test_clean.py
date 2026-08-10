@@ -15,6 +15,7 @@ from near_dedup import dedup_near, est_jaccard, minhash
 from pii_scrub import EMAIL_PLACEHOLDER, PHONE_PLACEHOLDER, scrub_pii
 from quality_filter import quality_ok
 from text_normalize import normalize_document, normalize_text
+from text_tokens import is_word_char, words
 
 JSON_KW = dict(sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
@@ -22,6 +23,36 @@ JSON_KW = dict(sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 def row(doc_id, text, lane="web", tier="T2", split="train"):
     return {"id": doc_id, "lane": lane, "provenance_tier": tier,
             "split": split, "source": "src@rev", "text": text}
+
+
+# --------------------------------------------------------------------------
+# script-aware tokenization (shared by 2.3 / 2.4 / 2.6)
+# --------------------------------------------------------------------------
+
+
+def test_words_keep_indic_syllables_whole() -> None:
+    """The tokenizer must not shred Indic words at their combining marks."""
+    assert words("বাংলা ভাষা") == ["বাংলা", "ভাষা"]          # Bengali
+    assert words("हिन्दी भाषा") == ["हिन्दी", "भाषा"]          # Devanagari
+    assert words("தமிழ் மொழி") == ["தமிழ்", "மொழி"]           # Tamil
+    # every token is a real word, not a one-character fragment
+    assert min(len(t) for t in words("বাংলা ভাষা হিন্দি")) >= 2
+
+
+def test_words_match_plain_ascii_behaviour() -> None:
+    """On Latin/ASCII text the tokenizer matches the old \\w+ behaviour."""
+    assert words("The monsoon reaches Kerala in June") == \
+        ["The", "monsoon", "reaches", "Kerala", "in", "June"]
+
+
+def test_indic_combining_marks_are_not_symbols() -> None:
+    """A combining vowel-sign is word content, so ordinary Indic text is not
+    read as symbol spam by the quality filter."""
+    assert is_word_char("া")          # Bengali vowel sign AA (category Mc)
+    assert is_word_char("्")          # Devanagari virama (category Mn)
+    assert not is_word_char("#")
+    ok, reason = quality_ok("বাংলা ভাষা দক্ষিণ এশিয়ার একটি প্রধান ভাষা এবং সংস্কৃতি")
+    assert ok and reason is None
 
 
 # --------------------------------------------------------------------------
@@ -195,6 +226,25 @@ def test_pii_still_redacts_a_single_line_phone() -> None:
     assert n == 1 and PHONE_PLACEHOLDER in out
 
 
+def test_pii_redacts_a_parenthesized_phone() -> None:
+    out, n = scrub_pii("reach us at (020) 7946 0958 now")
+    assert n == 1 and PHONE_PLACEHOLDER in out
+
+
+@pytest.mark.parametrize("text", [
+    "version 1.2.3.4.5.6.7 shipped",        # version string
+    "ids 1234567 2345678 3456789 here",     # bare numeric ids
+    "the constant is 3.14159265358979 today",  # long decimal
+    "date range 2024-01-15 to 2024-12-31",  # dates
+    "sequence 1 2 3 4 5 6 7 8 9 done",       # spaced number list
+])
+def test_pii_leaves_unmarked_number_runs_alone(text) -> None:
+    """Only numbers with an explicit phone marker (+ or paren) are redacted;
+    version strings, ids, decimals, dates and number lists must survive."""
+    out, n = scrub_pii(text)
+    assert n == 0 and out == text
+
+
 # --------------------------------------------------------------------------
 # 2.6 decontamination
 # --------------------------------------------------------------------------
@@ -219,6 +269,35 @@ def test_decontam_leaves_clean_train_alone() -> None:
     train = [row("t-1", "nothing in common with the eval set at all here friends")]
     kept, drops = decontaminate(train, eval_docs, ())
     assert len(kept) == 1 and drops == []
+
+
+def test_decontam_records_the_matched_source_and_sample() -> None:
+    """A drop must be auditable: which eval doc, and a sample overlapping n-gram."""
+    leak = "the reserve bank of india announced a surprising new monetary policy today unexpectedly"
+    eval_docs = [row("e-0", "preamble sentence here . " + leak, tier="T1", split="eval")]
+    train = [row("t-leak", "in market news " + leak + " which surprised many analysts")]
+    kept, drops = decontaminate(train, eval_docs, ())
+    assert kept == []
+    assert drops[0]["matched_sources"] == ["e-0"]
+    assert drops[0]["sample_ngram"] == leak
+
+
+def test_decontam_ignores_boilerplate_shared_across_eval() -> None:
+    """An n-gram recurring across many eval docs is a template, not benchmark
+    content, so a train doc that only shares it is kept."""
+    boiler = "this article is part of a series on the economy of modern india"  # 13 words
+    def unique(i):  # a 15-word span whose 13-grams all carry the doc-specific number
+        return f"distinct filler sentence number {i} with quite a lot of extra unrelated wording padding here"
+    eval_docs = [row(f"e-{i}", boiler + " . " + unique(i), tier="T1", split="eval") for i in range(6)]
+    # a train doc carrying only the boilerplate phrase survives...
+    boiler_train = row("t-boiler", boiler + " and nothing else of note")
+    # ...but a doc sharing content unique to one eval doc is still dropped
+    leak_train = row("t-leak", "prefix " + unique(0))
+    kept, drops = decontaminate([boiler_train, leak_train], eval_docs, ())
+    kept_ids = {d["id"] for d in kept}
+    assert "t-boiler" in kept_ids
+    assert [d["id"] for d in drops] == ["t-leak"]
+    assert drops[0]["matched_sources"] == ["e-0"]
 
 
 # --------------------------------------------------------------------------

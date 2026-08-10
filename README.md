@@ -41,6 +41,7 @@ eval_split.py           # 1.9 — select_eval / carve_eval: deterministic held-o
 corpus_loader.py        # 1.10 — iter_documents / corpus_counts / load_corpus (eval routed by manifest)
 corpus_report.py        # 1.11 — build/write corpus_summary.json (deterministic, regenerable)
 run_demo.py             # 1.12 + 2.7 — one-command runner: load-corpus + clean-corpus stages
+text_tokens.py          # shared — script-aware word tokenizer (keeps Indic combining marks; \w+ shreds them)
 text_normalize.py       # 2.1 — normalize_text/normalize_document (NFC, deterministic, idempotent)
 content_hash.py         # 2.2 — content_hash + dedup_exact
 quality_filter.py       # 2.3 — quality_ok / filter_quality (length, symbol, repetition)
@@ -48,7 +49,7 @@ near_dedup.py           # 2.4 — MinHash + LSH near-duplicate removal (pure Pyt
 pii_scrub.py            # 2.5 — scrub_pii (email/phone -> placeholders, idempotent)
 decontaminate.py        # 2.6 — n-gram decontamination of train vs eval + contrastive
 clean_pipeline.py       # 2.7 — clean_corpus: compose 2.1-2.6 -> data/clean + cleaning_report
-test_*.py               # invariant tests (165 passing, fully offline)
+test_*.py               # invariant tests (176 passing, fully offline)
 pyproject.toml          # deps + pytest config (pythonpath=".")
 ```
 
@@ -56,7 +57,7 @@ pyproject.toml          # deps + pytest config (pythonpath=".")
 
 ```bash
 pip install pytest
-pytest                 # 165 tests; datasets / huggingface_hub not required
+pytest                 # 176 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)

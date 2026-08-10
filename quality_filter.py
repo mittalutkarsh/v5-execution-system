@@ -7,8 +7,10 @@ first failing reason so a drop can say exactly why.
 
 from __future__ import annotations
 
-import re
 from typing import Any, Iterable
+
+from text_tokens import is_word_char
+from text_tokens import words as _words
 
 __all__ = [
     "MIN_CHARS",
@@ -21,10 +23,8 @@ __all__ = [
 
 MIN_CHARS: int = 20              # shorter than this is not a document
 MIN_WORDS: int = 5
-MAX_SYMBOL_RATIO: float = 0.5    # fraction of non-alphanumeric, non-space chars
+MAX_SYMBOL_RATIO: float = 0.5    # fraction of non-word (punctuation/symbol) chars
 MAX_WORD_REPETITION: float = 0.6  # fraction of tokens that are the single commonest word
-
-_WORD = re.compile(r"\w+", re.UNICODE)
 
 
 def quality_ok(text: str) -> tuple[bool, str | None]:
@@ -33,13 +33,16 @@ def quality_ok(text: str) -> tuple[bool, str | None]:
     if len(stripped) < MIN_CHARS:
         return False, f"too short: {len(stripped)} chars < {MIN_CHARS}"
 
-    words = _WORD.findall(stripped)
+    words = _words(stripped)
     if len(words) < MIN_WORDS:
         return False, f"too few words: {len(words)} < {MIN_WORDS}"
 
+    # symbol ratio: combining marks (Indic vowel-signs/virama) are word content,
+    # not symbols, so classify via the shared script-aware rule -- otherwise
+    # ordinary Devanagari/Bengali/Tamil text reads as majority-"symbol".
     non_space = [c for c in stripped if not c.isspace()]
     if non_space:
-        symbols = sum(1 for c in non_space if not c.isalnum())
+        symbols = sum(1 for c in non_space if not is_word_char(c))
         ratio = symbols / len(non_space)
         if ratio > MAX_SYMBOL_RATIO:
             return False, f"symbol-heavy: {ratio:.2f} > {MAX_SYMBOL_RATIO}"

@@ -10,9 +10,10 @@ rest are dropped, each naming its survivor and the estimated Jaccard.
 from __future__ import annotations
 
 import random
-import re
 import zlib
 from typing import Any, Iterable
+
+from text_tokens import words as _words
 
 __all__ = [
     "NUM_PERM",
@@ -34,8 +35,6 @@ THRESHOLD: float = 0.8
 _MERSENNE = (1 << 61) - 1
 _SEED = "v5-near-dedup-2026"
 
-_WORD = re.compile(r"\w+", re.UNICODE)
-
 # Permutation coefficients, generated ONCE from a fixed seed -> deterministic.
 _rng = random.Random(_SEED)
 _PERMS: tuple[tuple[int, int], ...] = tuple(
@@ -46,11 +45,11 @@ _MAX = _MERSENNE  # sentinel for "no shingle"
 
 def shingles(text: str, n: int = SHINGLE_N) -> set[int]:
     """Stable crc32 hashes of the lowercased word n-grams of `text`."""
-    words = [w.lower() for w in _WORD.findall(text)]
-    if len(words) < n:
-        grams = [" ".join(words)] if words else []
+    toks = [w.lower() for w in _words(text)]
+    if len(toks) < n:
+        grams = [" ".join(toks)] if toks else []
     else:
-        grams = [" ".join(words[i : i + n]) for i in range(len(words) - n + 1)]
+        grams = [" ".join(toks[i : i + n]) for i in range(len(toks) - n + 1)]
     return {zlib.crc32(g.encode("utf-8")) & 0xFFFFFFFF for g in grams}
 
 

@@ -2,12 +2,17 @@
   "drops": [
     {
       "id": "code-github-0003898",
-      "reason": "symbol-heavy: 0.52 > 0.5",
+      "reason": "symbol-heavy: 0.51 > 0.5",
       "stage": "quality"
     },
     {
-      "id": "indic-wiki-ta-0000041",
-      "reason": "symbol-heavy: 0.52 > 0.5",
+      "id": "indic-wiki-ta-0000000",
+      "reason": "too few words: 2 < 5",
+      "stage": "quality"
+    },
+    {
+      "id": "indic-wiki-ta-0000053",
+      "reason": "too few words: 3 < 5",
       "stage": "quality"
     },
     {
@@ -149,338 +154,98 @@
       "stage": "near_dup"
     },
     {
-      "id": "indic-wiki-bn-0000002",
-      "overlap": 6,
-      "reason": "shares 6 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000007",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000012",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000017",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000032",
-      "overlap": 4,
-      "reason": "shares 4 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000039",
-      "overlap": 7,
-      "reason": "shares 7 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000040",
-      "overlap": 17,
-      "reason": "shares 17 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000041",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000042",
-      "overlap": 4,
-      "reason": "shares 4 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000047",
-      "overlap": 3,
-      "reason": "shares 3 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000051",
-      "overlap": 8,
-      "reason": "shares 8 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000052",
-      "overlap": 3,
-      "reason": "shares 3 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000054",
-      "overlap": 28,
-      "reason": "shares 28 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
       "id": "indic-wiki-bn-0000055",
-      "overlap": 39,
-      "reason": "shares 39 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000056",
-      "overlap": 16,
-      "reason": "shares 16 13-gram(s) with eval/contrastive",
+      "matched_sources": [
+        "indic-wiki-bn-0000053"
+      ],
+      "overlap": 2,
+      "reason": "shares 2 13-gram(s) with eval/contrastive",
+      "sample_ngram": "জাতিসংঘের সদস্য রাষ্ট্র ইউরোপ কাউন্সিলের সদস্য রাষ্ট্র আন্তর্জাতিক সংস্থা দে লা ফ্রাঙ্কোফোনির সদস্য",
       "stage": "decontam"
     },
     {
       "id": "indic-wiki-bn-0000058",
-      "overlap": 101,
-      "reason": "shares 101 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000060",
-      "overlap": 23,
-      "reason": "shares 23 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000062",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000063",
-      "overlap": 14,
-      "reason": "shares 14 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-bn-0000064",
-      "overlap": 13,
-      "reason": "shares 13 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000002",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000003",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000005",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000006",
-      "overlap": 2,
-      "reason": "shares 2 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000012",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000013",
-      "overlap": 2,
-      "reason": "shares 2 13-gram(s) with eval/contrastive",
+      "matched_sources": [
+        "indic-wiki-bn-0000061"
+      ],
+      "overlap": 10,
+      "reason": "shares 10 13-gram(s) with eval/contrastive",
+      "sample_ngram": "আসছে এতে এ পর্যন্ত দু দেশের প্রায় ৩০০ এর বেশি বেসামরিক লোকজন নিহতের",
       "stage": "decontam"
     },
     {
       "id": "indic-wiki-hi-0000017",
+      "matched_sources": [
+        "indic-wiki-bn-0000009"
+      ],
       "overlap": 15,
       "reason": "shares 15 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000025",
-      "overlap": 12,
-      "reason": "shares 12 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000049",
-      "overlap": 9,
-      "reason": "shares 9 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000057",
-      "overlap": 3,
-      "reason": "shares 3 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000058",
-      "overlap": 25,
-      "reason": "shares 25 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000059",
-      "overlap": 4,
-      "reason": "shares 4 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000063",
-      "overlap": 9,
-      "reason": "shares 9 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000064",
-      "overlap": 4,
-      "reason": "shares 4 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000068",
-      "overlap": 6,
-      "reason": "shares 6 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000072",
-      "overlap": 12,
-      "reason": "shares 12 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000089",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
+      "sample_ngram": "alan wood s unicode resources contains lists of word processors with unicode capability",
       "stage": "decontam"
     },
     {
       "id": "indic-wiki-hi-0000097",
-      "overlap": 66,
-      "reason": "shares 66 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000099",
-      "overlap": 15,
-      "reason": "shares 15 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000100",
-      "overlap": 15,
-      "reason": "shares 15 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000101",
-      "overlap": 2,
-      "reason": "shares 2 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000102",
-      "overlap": 11,
-      "reason": "shares 11 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000107",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-hi-0000111",
-      "overlap": 12,
-      "reason": "shares 12 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000029",
-      "overlap": 5,
-      "reason": "shares 5 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000063",
-      "overlap": 3,
-      "reason": "shares 3 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000065",
-      "overlap": 2,
-      "reason": "shares 2 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000104",
-      "overlap": 1,
-      "reason": "shares 1 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000120",
-      "overlap": 7,
-      "reason": "shares 7 13-gram(s) with eval/contrastive",
-      "stage": "decontam"
-    },
-    {
-      "id": "indic-wiki-ta-0000124",
-      "overlap": 3,
-      "reason": "shares 3 13-gram(s) with eval/contrastive",
+      "matched_sources": [
+        "indic-wiki-hi-0000039"
+      ],
+      "overlap": 24,
+      "reason": "shares 24 13-gram(s) with eval/contrastive",
+      "sample_ngram": "अरण्यक उपनिषद् आदि पर सम्यक जानकारी वेद एवं वेदांग आर्य समाज जामनगर के",
       "stage": "decontam"
     },
     {
       "id": "mling-wiki-fr-0000017",
+      "matched_sources": [
+        "mling-wiki-fr-0000018"
+      ],
       "overlap": 4,
       "reason": "shares 4 13-gram(s) with eval/contrastive",
+      "sample_ngram": "dans le département étaient des résidences secondaires ce tableau indique les principales communes",
       "stage": "decontam"
     },
     {
       "id": "mling-wiki-fr-0000019",
+      "matched_sources": [
+        "mling-wiki-fr-0000018"
+      ],
       "overlap": 6,
       "reason": "shares 6 13-gram(s) with eval/contrastive",
+      "sample_ngram": "dans le département étaient des résidences secondaires ce tableau indique les principales communes",
       "stage": "decontam"
     },
     {
       "id": "mling-wiki-fr-0000020",
+      "matched_sources": [
+        "mling-wiki-fr-0000018"
+      ],
       "overlap": 20,
       "reason": "shares 20 13-gram(s) with eval/contrastive",
+      "sample_ngram": "1815 à novembre 1818 voir occupation de la france à la fin du",
       "stage": "decontam"
     },
     {
       "id": "mling-wiki-fr-0000021",
+      "matched_sources": [
+        "mling-wiki-fr-0000018"
+      ],
       "overlap": 6,
       "reason": "shares 6 13-gram(s) with eval/contrastive",
+      "sample_ngram": "dans le département étaient des résidences secondaires ce tableau indique les principales communes",
       "stage": "decontam"
     },
     {
       "id": "mling-wiki-fr-0000022",
+      "matched_sources": [
+        "mling-wiki-fr-0000018"
+      ],
       "overlap": 6,
       "reason": "shares 6 13-gram(s) with eval/contrastive",
+      "sample_ngram": "dans le département étaient des résidences secondaires ce tableau indique les principales communes",
       "stage": "decontam"
     }
   ],
   "kind": "cleaning_report",
-  "pii_redactions": 5546,
+  "pii_redactions": 534,
   "stages": [
     {
       "dropped": 0,
@@ -495,36 +260,36 @@
       "stage": "exact_dup"
     },
     {
-      "dropped": 3,
+      "dropped": 4,
       "input": 13058,
-      "kept": 13055,
+      "kept": 13054,
       "stage": "quality"
     },
     {
       "dropped": 19,
-      "input": 13055,
-      "kept": 13036,
+      "input": 13054,
+      "kept": 13035,
       "stage": "near_dup"
     },
     {
       "dropped": 0,
-      "input": 13036,
-      "kept": 13036,
-      "redactions": 5546,
+      "input": 13035,
+      "kept": 13035,
+      "redactions": 534,
       "stage": "pii"
     },
     {
-      "dropped": 55,
-      "input": 13036,
-      "kept": 12981,
+      "dropped": 9,
+      "input": 13035,
+      "kept": 13026,
       "stage": "decontam"
     }
   ],
   "totals": {
-    "dropped": 77,
+    "dropped": 32,
     "eval_docs": 29,
     "train_in": 13058,
-    "train_out": 12981
+    "train_out": 13026
   },
   "version": 1
 }

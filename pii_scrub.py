@@ -19,13 +19,21 @@ EMAIL_PLACEHOLDER = "[EMAIL]"
 PHONE_PLACEHOLDER = "[PHONE]"
 
 _EMAIL = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
-# A run of digits with separators (spaces, tabs, dots, dashes, parens),
-# optionally a leading +. The separator class deliberately EXCLUDES newlines: a
-# phone number lives on one line, and matching across "\n" would swallow whole
-# multi-line number columns (equations, data tables) in the math/code lanes. The
-# 7-digit floor is enforced in the callback, so short numbers like a year (2024)
-# or a chapter (7) are left alone.
-_PHONE = re.compile(r"(?<!\w)\+?\d[\d \t().\-]{5,}\d(?!\w)")
+# Phone numbers are redacted only when they carry an explicit dialing marker:
+#   * a leading "+" (international format), or
+#   * a parenthesized area/trunk code "(...)".
+# Bare digit runs -- version strings, IDs, dates, and numeric data that fill the
+# code/math/web lanes -- are deliberately LEFT ALONE, because treating every
+# 7-digit sequence as a phone number destroys real content. The separator class
+# excludes newlines (a phone lives on one line), and the 7-digit floor is still
+# enforced in the callback so short groups like a year (2024) are ignored.
+_SEP = r"[\d \t().\-]"
+_PHONE = re.compile(
+    r"(?<!\w)(?:"
+    r"\+\d" + _SEP + r"{5,}\d"           # +CC then a single-line digit run
+    r"|\(\d{2,4}\)[ \t]?" + _SEP + r"{4,}\d"  # (area code) then more digits
+    r")(?!\w)"
+)
 
 
 def scrub_pii(text: str) -> tuple[str, int]:
