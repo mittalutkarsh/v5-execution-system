@@ -23,7 +23,9 @@ in the companion tracker (`session6_plan.md` / the Assignment page).
 | **1 · Collecting data — COMPLETE** | | ✅ |
 | 2 · Clean & filter | 2.1–2.7 normalize · hash+dedup · quality · near-dup · PII · decontaminate · pipeline | ✅ done |
 | **2 · Clean & filter — COMPLETE** | | ✅ |
-| 3 · Frozen BPE tokenizer | 3.1 BPE trainer | ⏳ next |
+| 3 · Frozen BPE tokenizer | 3.1–3.8 byte level · BPE trainer · freeze · encode · decode · specials · manifest+hash · run_demo | ✅ done |
+| **3 · Frozen BPE tokenizer — COMPLETE** | | ✅ |
+| 4 · Immutable shards + manifests | 4.1 shard writer | ⏳ next |
 
 The full ~10M-token pool is fetched and hash-verified across all five lanes
 (web 4.0M, code 2.0M, math 1.2M, indic 2.2M, multilingual 0.6M; 13,087 docs).
@@ -40,7 +42,7 @@ contrastive_pairs.py    # 1.8 — 36 hand-authored Indian-vantage vs Western-def
 eval_split.py           # 1.9 — select_eval / carve_eval: deterministic held-out eval (T1 only)
 corpus_loader.py        # 1.10 — iter_documents / corpus_counts / load_corpus (eval routed by manifest)
 corpus_report.py        # 1.11 — build/write corpus_summary.json (deterministic, regenerable)
-run_demo.py             # 1.12 + 2.7 — one-command runner: load-corpus + clean-corpus stages
+run_demo.py             # 1.12 + 2.7 + 3.8 — one-command runner: load + clean + tokenizer stages
 text_tokens.py          # shared — script-aware word tokenizer (keeps Indic combining marks; \w+ shreds them)
 text_normalize.py       # 2.1 — normalize_text/normalize_document (NFC, deterministic, idempotent)
 content_hash.py         # 2.2 — content_hash + dedup_exact
@@ -49,7 +51,12 @@ near_dedup.py           # 2.4 — MinHash + LSH near-duplicate removal (pure Pyt
 pii_scrub.py            # 2.5 — scrub_pii (email/phone -> placeholders, idempotent)
 decontaminate.py        # 2.6 — n-gram decontamination of train vs eval + contrastive
 clean_pipeline.py       # 2.7 — clean_corpus: compose 2.1-2.6 -> data/clean + cleaning_report
-test_*.py               # invariant tests (176 passing, fully offline)
+byte_level.py           # 3.1 — byte<->symbol + pre-tokenize (256-byte base; lossless every lane)
+bpe_train.py            # 3.2 — deterministic byte-level BPE trainer (lazy heap) + corpus sampler
+bpe_tokenizer.py        # 3.3-3.6 — Tokenizer: save/load, encode, decode, specials, integrity
+tokenizer_build.py      # 3.7 — build/freeze + manifest + content hash + verify
+tokenizer/              # 3.x — the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
+test_*.py               # invariant tests (230 passing, fully offline)
 pyproject.toml          # deps + pytest config (pythonpath=".")
 ```
 
@@ -57,7 +64,7 @@ pyproject.toml          # deps + pytest config (pythonpath=".")
 
 ```bash
 pip install pytest
-pytest                 # 176 tests; datasets / huggingface_hub not required
+pytest                 # 230 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)

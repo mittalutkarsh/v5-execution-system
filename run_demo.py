@@ -22,22 +22,26 @@ import json
 from pathlib import Path
 from typing import Any, Final, Sequence
 
+from bpe_train import sample_clean_corpus
 from clean_pipeline import clean_corpus
 from corpus_loader import corpus_counts
 from corpus_report import write_corpus_summary
 from corpus_schema import LANES
 from sources_manifest import SOURCES, LaneSource
+from tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_tokenizer, verify_frozen
 
 __all__ = [
     "ARTIFACTS_ROOT",
     "RunLog",
     "stage_load_corpus",
     "stage_clean_corpus",
+    "stage_tokenizer",
     "run",
     "main",
 ]
 
 ARTIFACTS_ROOT: Final[str] = "submission_artifacts"
+_TOKENIZER_DIR: Final[str] = "tokenizer"
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -163,6 +167,41 @@ def stage_clean_corpus(
     return report
 
 
+def stage_tokenizer(
+    log: RunLog,
+    *,
+    clean_root: str,
+    tokenizer_dir: str,
+    vocab_size: int,
+) -> Any:
+    """Stage 3: train + freeze the byte-level BPE tokenizer, verify, round-trip.
+
+    The freeze contract: the on-disk tokenizer's recomputed content hash must
+    match its manifest, and encode->decode must return every cleaned document
+    verbatim (real evidence, not a canned string).
+    """
+    tok = build_frozen_tokenizer(
+        clean_root=clean_root, out_dir=tokenizer_dir, vocab_size=vocab_size
+    )
+    if not verify_frozen(tokenizer_dir):
+        raise ValueError("frozen tokenizer hash does not match its manifest")
+
+    checked = sample_clean_corpus(clean_root, docs_per_lane=1, max_chars=500)
+    for text in checked:
+        if tok.decode(tok.encode(text)) != text:
+            raise ValueError("tokenizer round-trip failed on a cleaned document")
+
+    log.info("tokenizer", vocab=len(tok.vocab), merges=len(tok.merges))
+    log.info("tokenizer_roundtrip", lanes_checked=len(checked))
+    log.passed(
+        "tokenizer_frozen",
+        vocab=len(tok.vocab),
+        merges=len(tok.merges),
+        hash=tok.content_hash(),
+    )
+    return tok
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -170,6 +209,8 @@ def run(
     sources: Sequence[LaneSource] = SOURCES,
     artifacts_root: str = ARTIFACTS_ROOT,
     clean_root: str = "data/clean",
+    tokenizer_dir: str = _TOKENIZER_DIR,
+    vocab_size: int = DEFAULT_VOCAB_SIZE,
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -192,6 +233,12 @@ def run(
             eval_root=eval_root,
             sources=sources,
             clean_root=clean_root,
+        )
+        stage_tokenizer(
+            log,
+            clean_root=clean_root,
+            tokenizer_dir=tokenizer_dir,
+            vocab_size=vocab_size,
         )
         log.info("run_complete")
     finally:
