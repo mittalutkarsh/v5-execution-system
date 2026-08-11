@@ -25,7 +25,20 @@ in the companion tracker (`session6_plan.md` / the Assignment page).
 | **2 · Clean & filter — COMPLETE** | | ✅ |
 | 3 · Frozen BPE tokenizer | 3.1–3.8 byte level · BPE trainer · freeze · encode · decode · specials · manifest+hash · run_demo | ✅ done |
 | **3 · Frozen BPE tokenizer — COMPLETE** | | ✅ |
-| 4 · Immutable shards + manifests | 4.1 shard writer | ⏳ next |
+| 4 · Immutable shards + manifests | 4.1–4.4 | ✅ |
+| 5 · Evaluation firewall | 5.1–5.3 | ✅ |
+| 6 · Mixture / curriculum | 6.1–6.4 | ✅ |
+| 7 · OPUS selector | 7.1–7.5 | ✅ |
+| 8 · Packer (masks, position ids) | 8.1–8.6 | ✅ |
+| 9 · Batch stream + consumption ledger | 9.1–9.5 | ✅ |
+| 10 · Trainer (MoE) + learning ledger | 10.1–10.6 | ✅ |
+| 11 · Checkpoints | 11.1–11.4 | ✅ |
+| 12 · Crash + resume | 12.1–12.4 | ✅ |
+| 13 · Replay | 13.1–13.3 | ✅ |
+| 14 · Fork | 14.1–14.3 | ✅ |
+| 15 · Throughput | 15.1–15.3 | ✅ |
+| 16 · Audit + evidence | 16.1–16.6 | ✅ |
+| **ALL 16 FEATURES — COMPLETE** | | ✅ |
 
 The full ~10M-token pool is fetched and hash-verified across all five lanes
 (web 4.0M, code 2.0M, math 1.2M, indic 2.2M, multilingual 0.6M; 13,087 docs).
@@ -60,9 +73,22 @@ feature3_tokenizer/        # Feature 3 — frozen byte-level BPE tokenizer
   bpe_train.py             # 3.2 — deterministic byte-level BPE trainer (lazy heap) + corpus sampler
   bpe_tokenizer.py         # 3.3-3.6 — Tokenizer: save/load, encode, decode, specials, integrity
   tokenizer_build.py       # 3.7 — build/freeze + manifest + content hash + verify
+feature4_shards/           # 4 — content-addressed uint16 shards + manifests + index + reader
+feature5_firewall/         # 5 — eval firewall (eval shards never enter a train batch)
+feature6_mixture/          # 6 — curriculum: phases, lane weights, protected floors -> targets
+feature7_opus/             # 7 — OPUS accept/reject/defer + floor override + ΔS hook + ledger
+feature8_packer/           # 8 — pack to seq_len: position ids, segment/attention masks, loss mask
+feature9_batches/          # 9 — deterministic batch stream (seed+offset) + consumption ledger
+feature10_trainer/         # 10 — tiny PyTorch MoE + learning ledger (F1 surprisal) + ΔS (F2)
+feature11_checkpoint/      # 11 — model+optim+rng+offset checkpoint (+ hash) & restore
+feature12_resume/          # 12 — deliberate crash + resume (no skip/repeat; loss matches)
+feature13_replay/          # 13 — replay [a,b) from seed+ledger; hashes match
+feature14_fork/            # 14 — fork onto a new-seed branch; lineage recorded
+feature15_throughput/      # 15 — packing efficiency (logged) + wall-clock throughput (file)
+feature16_audit/           # 16 — cross-check artifacts + evidence.json/.md (nothing hardcoded)
 run_demo.py                # 1.12 + 2.7 + 3.8 — one-command runner: load + clean + tokenizer stages
 tokenizer/                 # the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
-tests/                     # test_*.py — invariant tests (230 passing, fully offline)
+tests/                     # test_*.py — invariant tests (294 passing, fully offline)
 pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["tests"])
 ```
 
@@ -70,7 +96,7 @@ pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["t
 
 ```bash
 pip install pytest
-pytest                 # 230 tests; datasets / huggingface_hub not required
+pytest                 # 294 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)
