@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-from byte_level import BYTE_TO_UNICODE, pretokens_as_symbols
+from feature3_tokenizer.byte_level import BYTE_TO_UNICODE, pretokens_as_symbols
 
 __all__ = ["train_bpe", "sample_clean_corpus", "DOCS_PER_LANE", "MAX_CHARS_PER_DOC"]
 

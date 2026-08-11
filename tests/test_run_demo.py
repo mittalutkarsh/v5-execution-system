@@ -6,10 +6,10 @@ import json
 
 import pytest
 
-from corpus_loader import corpus_counts
-from corpus_schema import LANES
+from feature1_collect.corpus_loader import corpus_counts
+from feature1_collect.corpus_schema import LANES
 from run_demo import ARTIFACTS_ROOT, RunLog, run
-from sources_manifest import SOURCES
+from feature1_collect.sources_manifest import SOURCES
 
 WEB_ID = "web-fineweb"      # T2, lane "web"
 WIKI_ID = "indic-wiki-hi"   # T1, lane "indic" -- the only eval-eligible one here

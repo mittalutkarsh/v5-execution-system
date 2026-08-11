@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from bpe_tokenizer import Tokenizer
-from bpe_train import train_bpe
+from feature3_tokenizer.bpe_tokenizer import Tokenizer
+from feature3_tokenizer.bpe_train import train_bpe
 
 SPECIALS = ("<pad>", "<bos>", "<eos>", "<doc>")
 CORPUS = [
@@ -74,7 +74,7 @@ def test_serialization_is_byte_identical(tok, tmp_path) -> None:
 
 
 def test_integrity_rejects_a_missing_byte(tok) -> None:
-    from byte_level import BYTE_TO_UNICODE
+    from feature3_tokenizer.byte_level import BYTE_TO_UNICODE
     broken = dict(tok.vocab)
     freed = broken.pop(BYTE_TO_UNICODE[65])   # drop the symbol for byte 'A'...
     broken["<placeholder>"] = freed           # ...but keep ids contiguous

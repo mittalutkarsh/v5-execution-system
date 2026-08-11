@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from byte_level import (
+from feature3_tokenizer.byte_level import (
     BYTE_TO_UNICODE,
     UNICODE_TO_BYTE,
     byte_decode,

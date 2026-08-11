@@ -34,30 +34,36 @@ originally-declared script-based/gated code sources would not load ungated.
 
 ## Layout (so far)
 
+Source is grouped by feature; tests live under `tests/`. Imports are
+package-qualified (e.g. `from feature2_clean.pii_scrub import scrub_pii`).
+
 ```
-corpus_schema.py        # 1.1 — Document / ContrastivePair records + validators
-sources_manifest.py     # 1.2 — LaneSource, SOURCES (10M pool), validate_sources
-fetch.py                # 1.3–1.7 — fetch_source / fetch_all: stream -> documents.jsonl + fetch_log + sha256
-contrastive_pairs.py    # 1.8 — 36 hand-authored Indian-vantage vs Western-default pairs
-eval_split.py           # 1.9 — select_eval / carve_eval: deterministic held-out eval (T1 only)
-corpus_loader.py        # 1.10 — iter_documents / corpus_counts / load_corpus (eval routed by manifest)
-corpus_report.py        # 1.11 — build/write corpus_summary.json (deterministic, regenerable)
-run_demo.py             # 1.12 + 2.7 + 3.8 — one-command runner: load + clean + tokenizer stages
-text_tokens.py          # shared — script-aware word tokenizer (keeps Indic combining marks; \w+ shreds them)
-text_normalize.py       # 2.1 — normalize_text/normalize_document (NFC, deterministic, idempotent)
-content_hash.py         # 2.2 — content_hash + dedup_exact
-quality_filter.py       # 2.3 — quality_ok / filter_quality (length, symbol, repetition)
-near_dedup.py           # 2.4 — MinHash + LSH near-duplicate removal (pure Python, deterministic)
-pii_scrub.py            # 2.5 — scrub_pii (email/phone -> placeholders, idempotent)
-decontaminate.py        # 2.6 — n-gram decontamination of train vs eval + contrastive
-clean_pipeline.py       # 2.7 — clean_corpus: compose 2.1-2.6 -> data/clean + cleaning_report
-byte_level.py           # 3.1 — byte<->symbol + pre-tokenize (256-byte base; lossless every lane)
-bpe_train.py            # 3.2 — deterministic byte-level BPE trainer (lazy heap) + corpus sampler
-bpe_tokenizer.py        # 3.3-3.6 — Tokenizer: save/load, encode, decode, specials, integrity
-tokenizer_build.py      # 3.7 — build/freeze + manifest + content hash + verify
-tokenizer/              # 3.x — the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
-test_*.py               # invariant tests (230 passing, fully offline)
-pyproject.toml          # deps + pytest config (pythonpath=".")
+feature1_collect/          # Feature 1 — collecting data
+  corpus_schema.py         # 1.1 — Document / ContrastivePair records + validators
+  sources_manifest.py      # 1.2 — LaneSource, SOURCES (10M pool), validate_sources
+  fetch.py                 # 1.3–1.7 — fetch_source / fetch_all: stream -> documents.jsonl + fetch_log + sha256
+  contrastive_pairs.py     # 1.8 — 36 hand-authored Indian-vantage vs Western-default pairs
+  eval_split.py            # 1.9 — select_eval / carve_eval: deterministic held-out eval (T1 only)
+  corpus_loader.py         # 1.10 — iter_documents / corpus_counts / load_corpus
+  corpus_report.py         # 1.11 — build/write corpus_summary.json (deterministic)
+feature2_clean/            # Feature 2 — clean & filter
+  text_tokens.py           # shared — script-aware word tokenizer (keeps Indic combining marks)
+  text_normalize.py        # 2.1 — normalize_text/normalize_document (NFC, idempotent)
+  content_hash.py          # 2.2 — content_hash + dedup_exact
+  quality_filter.py        # 2.3 — quality_ok / filter_quality (length, symbol, repetition)
+  near_dedup.py            # 2.4 — MinHash + LSH near-duplicate removal (pure Python)
+  pii_scrub.py             # 2.5 — scrub_pii (email/phone -> placeholders, idempotent)
+  decontaminate.py         # 2.6 — n-gram decontamination of train vs eval + contrastive
+  clean_pipeline.py        # 2.7 — clean_corpus: compose 2.1-2.6 -> data/clean + report
+feature3_tokenizer/        # Feature 3 — frozen byte-level BPE tokenizer
+  byte_level.py            # 3.1 — byte<->symbol + pre-tokenize (256-byte base; lossless every lane)
+  bpe_train.py             # 3.2 — deterministic byte-level BPE trainer (lazy heap) + corpus sampler
+  bpe_tokenizer.py         # 3.3-3.6 — Tokenizer: save/load, encode, decode, specials, integrity
+  tokenizer_build.py       # 3.7 — build/freeze + manifest + content hash + verify
+run_demo.py                # 1.12 + 2.7 + 3.8 — one-command runner: load + clean + tokenizer stages
+tokenizer/                 # the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
+tests/                     # test_*.py — invariant tests (230 passing, fully offline)
+pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["tests"])
 ```
 
 ## Run the tests (offline, no network)

@@ -6,7 +6,7 @@ import dataclasses
 
 import pytest
 
-from corpus_schema import (
+from feature1_collect.corpus_schema import (
     EXAMPLE_DOCUMENTS,
     EXAMPLE_PAIRS,
     EXAMPLES,

@@ -8,14 +8,14 @@ import json
 
 import pytest
 
-from content_hash import content_hash, dedup_exact
-from corpus_schema import Document, validate_document
-from decontaminate import decontaminate, ngrams
-from near_dedup import dedup_near, est_jaccard, minhash
-from pii_scrub import EMAIL_PLACEHOLDER, PHONE_PLACEHOLDER, scrub_pii
-from quality_filter import quality_ok
-from text_normalize import normalize_document, normalize_text
-from text_tokens import is_word_char, words
+from feature2_clean.content_hash import content_hash, dedup_exact
+from feature1_collect.corpus_schema import Document, validate_document
+from feature2_clean.decontaminate import decontaminate, ngrams
+from feature2_clean.near_dedup import dedup_near, est_jaccard, minhash
+from feature2_clean.pii_scrub import EMAIL_PLACEHOLDER, PHONE_PLACEHOLDER, scrub_pii
+from feature2_clean.quality_filter import quality_ok
+from feature2_clean.text_normalize import normalize_document, normalize_text
+from feature2_clean.text_tokens import is_word_char, words
 
 JSON_KW = dict(sort_keys=True, ensure_ascii=False, separators=(",", ":"))
 
@@ -308,7 +308,7 @@ def test_decontam_ignores_boilerplate_shared_across_eval() -> None:
 @pytest.fixture
 def cleanable(tmp_path):
     """A tiny raw+eval corpus with a duplicate, junk, PII, and a contaminated doc."""
-    from sources_manifest import SOURCES
+    from feature1_collect.sources_manifest import SOURCES
     web = next(s for s in SOURCES if s.source_id == "web-fineweb")     # T2
     wiki = next(s for s in SOURCES if s.source_id == "indic-wiki-hi")  # T1
     raw, evl = tmp_path / "raw", tmp_path / "eval"
@@ -350,7 +350,7 @@ def cleanable(tmp_path):
 
 
 def test_pipeline_drops_each_kind_and_reports(cleanable) -> None:
-    from clean_pipeline import clean_corpus
+    from feature2_clean.clean_pipeline import clean_corpus
     report = clean_corpus(**cleanable, contrastive=())
     stages = {s["stage"]: s for s in report["stages"]}
     assert stages["exact_dup"]["dropped"] == 1
@@ -364,7 +364,7 @@ def test_pipeline_drops_each_kind_and_reports(cleanable) -> None:
 
 
 def test_pipeline_writes_cleaned_docs_that_validate(cleanable) -> None:
-    from clean_pipeline import clean_corpus
+    from feature2_clean.clean_pipeline import clean_corpus
     from pathlib import Path
     clean_corpus(**cleanable, contrastive=())
     clean = Path(cleanable["clean_root"])
@@ -379,7 +379,7 @@ def test_pipeline_writes_cleaned_docs_that_validate(cleanable) -> None:
 
 
 def test_pipeline_is_idempotent(cleanable) -> None:
-    from clean_pipeline import clean_corpus
+    from feature2_clean.clean_pipeline import clean_corpus
     from pathlib import Path
     clean_corpus(**cleanable, contrastive=())
     report_path = Path(cleanable["clean_root"]) / "cleaning_report.json"
@@ -389,7 +389,7 @@ def test_pipeline_is_idempotent(cleanable) -> None:
 
 
 def test_pipeline_does_not_mutate_raw(cleanable) -> None:
-    from clean_pipeline import clean_corpus
+    from feature2_clean.clean_pipeline import clean_corpus
     from pathlib import Path
     raw = Path(cleanable["raw_root"])
     before = {p: p.read_bytes() for p in sorted(raw.rglob("*.jsonl"))}

@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from byte_level import (
+from feature3_tokenizer.byte_level import (
     BYTE_TO_UNICODE,
     decode_from_symbols,
     pretokens_as_symbols,
 )
-from content_hash import content_hash as _hash_text
+from feature2_clean.content_hash import content_hash as _hash_text
 
 __all__ = ["Tokenizer", "VOCAB_FILE", "MERGES_FILE", "SPECIALS_FILE", "MERGES_HEADER"]
 

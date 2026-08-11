@@ -6,16 +6,16 @@ import json
 
 import pytest
 
-from corpus_loader import corpus_counts
-from corpus_report import (
+from feature1_collect.corpus_loader import corpus_counts
+from feature1_collect.corpus_report import (
     REPORT_KIND,
     REPORT_VERSION,
     build_summary,
     load_corpus_summary,
     write_corpus_summary,
 )
-from corpus_schema import LANES
-from sources_manifest import SOURCES
+from feature1_collect.corpus_schema import LANES
+from feature1_collect.sources_manifest import SOURCES
 
 WEB_ID = "web-fineweb"      # T2, lane "web"
 WIKI_ID = "indic-wiki-hi"   # T1, lane "indic" -- the only eval-eligible one here

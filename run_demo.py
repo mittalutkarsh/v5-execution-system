@@ -22,13 +22,13 @@ import json
 from pathlib import Path
 from typing import Any, Final, Sequence
 
-from bpe_train import sample_clean_corpus
-from clean_pipeline import clean_corpus
-from corpus_loader import corpus_counts
-from corpus_report import write_corpus_summary
-from corpus_schema import LANES
-from sources_manifest import SOURCES, LaneSource
-from tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_tokenizer, verify_frozen
+from feature3_tokenizer.bpe_train import sample_clean_corpus
+from feature2_clean.clean_pipeline import clean_corpus
+from feature1_collect.corpus_loader import corpus_counts
+from feature1_collect.corpus_report import write_corpus_summary
+from feature1_collect.corpus_schema import LANES
+from feature1_collect.sources_manifest import SOURCES, LaneSource
+from feature3_tokenizer.tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_tokenizer, verify_frozen
 
 __all__ = [
     "ARTIFACTS_ROOT",

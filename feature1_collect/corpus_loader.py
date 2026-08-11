@@ -30,10 +30,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, Iterator, Sequence
 
-from contrastive_pairs import CONTRASTIVE_PAIRS
-from corpus_schema import LANES, ContrastivePair, Document, validate_document
-from fetch import estimate_tokens
-from sources_manifest import EVAL_TIERS, SOURCES, LaneSource
+from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
+from feature1_collect.corpus_schema import LANES, ContrastivePair, Document, validate_document
+from feature1_collect.fetch import estimate_tokens
+from feature1_collect.sources_manifest import EVAL_TIERS, SOURCES, LaneSource
 
 __all__ = [
     "LoadedDocument",

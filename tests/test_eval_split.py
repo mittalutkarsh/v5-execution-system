@@ -6,10 +6,10 @@ import json
 
 import pytest
 
-from corpus_schema import Document, validate_document
-from eval_split import EVAL_TARGET_FRACTION, carve_eval, select_eval
-from fetch import estimate_tokens
-from sources_manifest import SOURCES
+from feature1_collect.corpus_schema import Document, validate_document
+from feature1_collect.eval_split import EVAL_TARGET_FRACTION, carve_eval, select_eval
+from feature1_collect.fetch import estimate_tokens
+from feature1_collect.sources_manifest import SOURCES
 
 POOL = 200_000
 OTHER_SEED = "different-seed-2027"

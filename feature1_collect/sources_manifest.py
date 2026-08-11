@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final, Iterable, Sequence
 
-from corpus_schema import LANES, PROVENANCE_TIERS
+from feature1_collect.corpus_schema import LANES, PROVENANCE_TIERS
 
 __all__ = [
     "LaneSource",

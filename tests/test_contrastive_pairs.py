@@ -6,8 +6,8 @@ import dataclasses
 
 import pytest
 
-from contrastive_pairs import CONTRASTIVE_PAIRS, validate_all
-from corpus_schema import CHAUVINISM, VANTAGE
+from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS, validate_all
+from feature1_collect.corpus_schema import CHAUVINISM, VANTAGE
 
 
 def test_corpus_is_large_enough() -> None:

@@ -17,15 +17,15 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Sequence
 
-from contrastive_pairs import CONTRASTIVE_PAIRS
-from content_hash import dedup_exact
-from corpus_loader import iter_documents
-from decontaminate import decontaminate
-from near_dedup import dedup_near
-from pii_scrub import scrub_pii
-from quality_filter import filter_quality
-from sources_manifest import SOURCES, LaneSource
-from text_normalize import normalize_text
+from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
+from feature2_clean.content_hash import dedup_exact
+from feature1_collect.corpus_loader import iter_documents
+from feature2_clean.decontaminate import decontaminate
+from feature2_clean.near_dedup import dedup_near
+from feature2_clean.pii_scrub import scrub_pii
+from feature2_clean.quality_filter import filter_quality
+from feature1_collect.sources_manifest import SOURCES, LaneSource
+from feature2_clean.text_normalize import normalize_text
 
 __all__ = ["REPORT_KIND", "REPORT_VERSION", "clean_corpus"]
 

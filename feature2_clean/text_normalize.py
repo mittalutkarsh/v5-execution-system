@@ -16,7 +16,7 @@ import re
 import unicodedata
 from dataclasses import replace
 
-from corpus_schema import Document
+from feature1_collect.corpus_schema import Document
 
 __all__ = ["normalize_text", "normalize_document"]
 

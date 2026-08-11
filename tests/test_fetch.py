@@ -11,9 +11,9 @@ import sys
 
 import pytest
 
-from corpus_schema import Document, validate_document
-from fetch import estimate_tokens, fetch_all, fetch_source
-from sources_manifest import SOURCES, LaneSource
+from feature1_collect.corpus_schema import Document, validate_document
+from feature1_collect.fetch import estimate_tokens, fetch_all, fetch_source
+from feature1_collect.sources_manifest import SOURCES, LaneSource
 
 TARGET = 200
 N_DOCS = 50

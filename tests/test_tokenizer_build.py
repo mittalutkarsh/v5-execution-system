@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from tokenizer_build import (
+from feature3_tokenizer.tokenizer_build import (
     DEFAULT_SPECIALS,
     MANIFEST_FILE,
     build_frozen_tokenizer,

@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Sequence
 
-from text_tokens import words as _words
+from feature2_clean.text_tokens import words as _words
 
 __all__ = [
     "NGRAM_N",

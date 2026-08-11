@@ -27,8 +27,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
-from corpus_schema import Document, validate_document
-from sources_manifest import SOURCES, LaneSource, validate_sources
+from feature1_collect.corpus_schema import Document, validate_document
+from feature1_collect.sources_manifest import SOURCES, LaneSource, validate_sources
 
 __all__ = ["estimate_tokens", "fetch_source", "fetch_all", "main"]
 

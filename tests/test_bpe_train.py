@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from byte_level import BYTE_TO_UNICODE
-from bpe_train import train_bpe
+from feature3_tokenizer.byte_level import BYTE_TO_UNICODE
+from feature3_tokenizer.bpe_train import train_bpe
 
 CORPUS = [
     "the cat sat on the mat",

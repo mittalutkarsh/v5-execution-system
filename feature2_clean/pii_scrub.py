@@ -11,7 +11,7 @@ import re
 from dataclasses import replace
 from typing import Any
 
-from corpus_schema import Document
+from feature1_collect.corpus_schema import Document
 
 __all__ = ["EMAIL_PLACEHOLDER", "PHONE_PLACEHOLDER", "scrub_pii", "scrub_document"]
 

@@ -13,8 +13,8 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-from bpe_tokenizer import Tokenizer
-from bpe_train import DOCS_PER_LANE, MAX_CHARS_PER_DOC, sample_clean_corpus, train_bpe
+from feature3_tokenizer.bpe_tokenizer import Tokenizer
+from feature3_tokenizer.bpe_train import DOCS_PER_LANE, MAX_CHARS_PER_DOC, sample_clean_corpus, train_bpe
 
 __all__ = [
     "DEFAULT_SPECIALS",

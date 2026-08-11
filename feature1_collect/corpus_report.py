@@ -24,9 +24,9 @@ import json
 from pathlib import Path
 from typing import Any, Final, Sequence
 
-from corpus_loader import corpus_counts
-from corpus_schema import LANES
-from sources_manifest import SOURCES, LaneSource
+from feature1_collect.corpus_loader import corpus_counts
+from feature1_collect.corpus_schema import LANES
+from feature1_collect.sources_manifest import SOURCES, LaneSource
 
 __all__ = [
     "REPORT_KIND",

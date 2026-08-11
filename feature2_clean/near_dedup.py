@@ -13,7 +13,7 @@ import random
 import zlib
 from typing import Any, Iterable
 
-from text_tokens import words as _words
+from feature2_clean.text_tokens import words as _words
 
 __all__ = [
     "NUM_PERM",

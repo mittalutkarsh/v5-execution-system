@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from typing import Final, Iterable, Sequence
 
-from corpus_schema import (
+from feature1_collect.corpus_schema import (
     CHAUVINISM,
     VANTAGE,
     ContrastivePair,

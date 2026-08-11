@@ -6,17 +6,17 @@ import json
 
 import pytest
 
-from contrastive_pairs import CONTRASTIVE_PAIRS
-from corpus_loader import (
+from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
+from feature1_collect.corpus_loader import (
     CorpusView,
     corpus_counts,
     iter_documents,
     load_corpus,
     load_eval_ids,
 )
-from corpus_schema import LANES, validate_document
-from fetch import estimate_tokens
-from sources_manifest import SOURCES
+from feature1_collect.corpus_schema import LANES, validate_document
+from feature1_collect.fetch import estimate_tokens
+from feature1_collect.sources_manifest import SOURCES
 
 WEB_ID = "web-fineweb"      # T2, lane "web"      -- never eval-eligible
 WIKI_ID = "indic-wiki-hi"   # T1, lane "indic"    -- eval-eligible

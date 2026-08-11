@@ -29,9 +29,9 @@ import json
 from pathlib import Path
 from typing import Any, Final, Iterable, Sequence
 
-from corpus_schema import Document, validate_document
-from fetch import estimate_tokens
-from sources_manifest import EVAL_TIERS, SOURCES, LaneSource, eval_eligible
+from feature1_collect.corpus_schema import Document, validate_document
+from feature1_collect.fetch import estimate_tokens
+from feature1_collect.sources_manifest import EVAL_TIERS, SOURCES, LaneSource, eval_eligible
 
 __all__ = [
     "EVAL_TARGET_FRACTION",

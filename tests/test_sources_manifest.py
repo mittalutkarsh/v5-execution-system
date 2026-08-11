@@ -6,8 +6,8 @@ import dataclasses
 
 import pytest
 
-from corpus_schema import LANES
-from sources_manifest import (
+from feature1_collect.corpus_schema import LANES
+from feature1_collect.sources_manifest import (
     POOL_TARGET_TOKENS,
     POOL_TOLERANCE,
     SOURCES,
