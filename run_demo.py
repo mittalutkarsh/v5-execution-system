@@ -31,6 +31,7 @@ from feature1_collect.sources_manifest import SOURCES, LaneSource
 from feature3_tokenizer.tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_tokenizer, verify_frozen
 from feature4_shards.shard_corpus import shard_corpus
 from feature4_shards.shard_index import verify_shards
+from feature5_firewall.firewall import eval_shards_blocked
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -39,6 +40,7 @@ __all__ = [
     "stage_clean_corpus",
     "stage_tokenizer",
     "stage_shards",
+    "stage_firewall",
     "run",
     "main",
 ]
@@ -236,6 +238,20 @@ def stage_shards(
     return index
 
 
+def stage_firewall(log: RunLog, *, index: dict[str, Any]) -> dict[str, Any]:
+    """Stage 5: prove every eval shard is quarantined from training."""
+    result = eval_shards_blocked(index)
+    if not result["ok"]:
+        raise ValueError("evaluation firewall breached: an eval shard is admissible")
+    log.passed(
+        "eval_shard_blocked",
+        blocked=result["blocked"],
+        eval_shards=result["eval_shards"],
+        train_shards=result["train_shards"],
+    )
+    return result
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -275,7 +291,7 @@ def run(
             tokenizer_dir=tokenizer_dir,
             vocab_size=vocab_size,
         )
-        stage_shards(
+        index = stage_shards(
             log,
             clean_root=clean_root,
             raw_root=raw_root,
@@ -284,6 +300,7 @@ def run(
             tokenizer_dir=tokenizer_dir,
             shard_root=shard_root,
         )
+        stage_firewall(log, index=index)
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind
