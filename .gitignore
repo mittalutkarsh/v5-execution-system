@@ -7,3 +7,5 @@ venv/
 submission_artifacts/
 data/raw/
 data/eval/
+data/clean/
+data/shards/

@@ -69,7 +69,8 @@ def corpus(tmp_path, fixture_sources):
 def do_run(corpus, artifacts_root):
     clean_root = str(artifacts_root) + "-clean"
     code = run(**corpus, artifacts_root=str(artifacts_root), clean_root=clean_root,
-               tokenizer_dir=str(artifacts_root) + "-tok", vocab_size=400)
+               tokenizer_dir=str(artifacts_root) + "-tok", vocab_size=400,
+               shard_root=str(artifacts_root) + "-shards")
     return code, (artifacts_root / "run.log").read_text(encoding="utf-8")
 
 
@@ -195,9 +196,9 @@ def test_two_runs_produce_byte_identical_logs(tmp_path, corpus) -> None:
     """Different artifact roots, same bytes -- no clock, no paths."""
     a, b = tmp_path / "artifacts-a", tmp_path / "deeper" / "artifacts-b"
     run(**corpus, artifacts_root=str(a), clean_root=str(tmp_path / "clean-a"),
-        tokenizer_dir=str(tmp_path / "tok-a"), vocab_size=400)
+        tokenizer_dir=str(tmp_path / "tok-a"), vocab_size=400, shard_root=str(tmp_path / "sh-a"))
     run(**corpus, artifacts_root=str(b), clean_root=str(tmp_path / "clean-b"),
-        tokenizer_dir=str(tmp_path / "tok-b"), vocab_size=400)
+        tokenizer_dir=str(tmp_path / "tok-b"), vocab_size=400, shard_root=str(tmp_path / "sh-b"))
     assert (a / "run.log").read_bytes() == (b / "run.log").read_bytes()
 
 
@@ -214,6 +215,13 @@ def test_run_log_has_the_tokenizer_pass_line(tmp_path, corpus) -> None:
     assert len(pass_lines) == 1
     assert "vocab=" in pass_lines[0] and "hash=" in pass_lines[0]
     assert "[INFO] tokenizer_roundtrip lanes_checked=" in text
+
+
+def test_run_log_has_the_shards_pass_line(tmp_path, corpus) -> None:
+    _, text = do_run(corpus, tmp_path / "artifacts")
+    pass_lines = [l for l in text.splitlines() if l.startswith("[PASS] shards_written")]
+    assert len(pass_lines) == 1
+    assert "verified=True" in pass_lines[0] and "tokens=" in pass_lines[0]
 
 
 def test_run_creates_the_manifests_dir(tmp_path, corpus) -> None:

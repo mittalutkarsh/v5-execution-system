@@ -29,6 +29,8 @@ from feature1_collect.corpus_report import write_corpus_summary
 from feature1_collect.corpus_schema import LANES
 from feature1_collect.sources_manifest import SOURCES, LaneSource
 from feature3_tokenizer.tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_tokenizer, verify_frozen
+from feature4_shards.shard_corpus import shard_corpus
+from feature4_shards.shard_index import verify_shards
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -36,12 +38,14 @@ __all__ = [
     "stage_load_corpus",
     "stage_clean_corpus",
     "stage_tokenizer",
+    "stage_shards",
     "run",
     "main",
 ]
 
 ARTIFACTS_ROOT: Final[str] = "submission_artifacts"
 _TOKENIZER_DIR: Final[str] = "tokenizer"
+_SHARD_ROOT: Final[str] = "data/shards"
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -202,6 +206,36 @@ def stage_tokenizer(
     return tok
 
 
+def stage_shards(
+    log: RunLog,
+    *,
+    clean_root: str,
+    raw_root: str,
+    eval_root: str,
+    sources: Sequence[LaneSource],
+    tokenizer_dir: str,
+    shard_root: str,
+) -> dict[str, Any]:
+    """Stage 4: tokenize the corpus into immutable, content-addressed shards."""
+    index = shard_corpus(
+        clean_root=clean_root, raw_root=raw_root, eval_root=eval_root,
+        sources=sources, tokenizer_dir=tokenizer_dir, shard_root=shard_root,
+    )
+    for split in index["by_split"]:
+        b = index["by_split"][split]
+        log.info("shards_split", split=split, shards=b["shards"], tokens=b["tokens"])
+    result = verify_shards(shard_root)
+    if not result["ok"]:
+        raise ValueError(f"shard verification failed: {result['mismatches'][:3]}")
+    log.passed(
+        "shards_written",
+        shards=index["n_shards"],
+        tokens=index["total_tokens"],
+        verified=result["ok"],
+    )
+    return index
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -211,6 +245,7 @@ def run(
     clean_root: str = "data/clean",
     tokenizer_dir: str = _TOKENIZER_DIR,
     vocab_size: int = DEFAULT_VOCAB_SIZE,
+    shard_root: str = _SHARD_ROOT,
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -239,6 +274,15 @@ def run(
             clean_root=clean_root,
             tokenizer_dir=tokenizer_dir,
             vocab_size=vocab_size,
+        )
+        stage_shards(
+            log,
+            clean_root=clean_root,
+            raw_root=raw_root,
+            eval_root=eval_root,
+            sources=sources,
+            tokenizer_dir=tokenizer_dir,
+            shard_root=shard_root,
         )
         log.info("run_complete")
     finally:
