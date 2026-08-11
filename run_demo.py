@@ -49,6 +49,8 @@ from feature11_checkpoint.checkpoint import save_checkpoint, verify_checkpoint
 from feature12_resume.resume import crash_and_resume, train_range
 from feature13_replay.replay import replay_interval
 from feature14_fork.fork import fork_run
+from feature15_throughput.throughput import build_performance, measure_throughput, packing_utilization
+from feature16_audit.audit import build_evidence, run_audit, write_evidence_md
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -67,6 +69,8 @@ __all__ = [
     "stage_resume",
     "stage_replay",
     "stage_fork",
+    "stage_throughput",
+    "stage_audit",
     "run",
     "main",
 ]
@@ -455,6 +459,43 @@ def stage_fork(log: RunLog, *, stream, checkpoint_dir: str, out_path: Path) -> N
                diverged_at=lineage["diverged_at"], diverged=lineage["diverged"])
 
 
+def stage_throughput(log: RunLog, *, make_trainer, stream, manifests: Path) -> None:
+    """Stage 15: deterministic packing efficiency (logged) + wall-clock throughput (file)."""
+    packing_report = json.loads((manifests / "packing_report.json").read_text(encoding="utf-8"))
+    throughput = measure_throughput(make_trainer, stream, n_steps=5)
+    performance = build_performance(packing_report, throughput)
+    with (manifests / "performance.json").open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(performance, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+    log.passed(
+        "throughput_measured",
+        efficiency=round(packing_utilization(packing_report), 4),
+        loss_tokens=packing_report["loss_positions"],
+    )
+
+
+def stage_audit(
+    log: RunLog, *, tokenizer_dir: str, shard_root: str, checkpoint_dir: str, manifests: Path,
+) -> dict[str, Any]:
+    """Stage 16: cross-check every artifact and write the evidence bundle."""
+    emitted = [e["event"] for e in log.events if e.get("level") == "PASS"]
+    audit = run_audit(
+        emitted_pass_events=emitted, tokenizer_dir=tokenizer_dir,
+        shard_root=shard_root, checkpoint_dir=checkpoint_dir, manifests=str(manifests),
+    )
+    evidence = build_evidence(
+        tokenizer_dir=tokenizer_dir, shard_root=shard_root,
+        checkpoint_dir=checkpoint_dir, manifests=str(manifests), audit=audit,
+    )
+    with (manifests / "evidence.json").open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(evidence, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+    write_evidence_md(evidence, str(manifests / "evidence.md"))
+    if not audit["all_passed"]:
+        raise ValueError(f"audit failed: {audit['checks']}")
+    log.passed("audit_complete", checks=len(audit["checks"]), all_passed=audit["all_passed"])
+    log.info("evidence_written", file="evidence.json")
+    return evidence
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -532,6 +573,9 @@ def run(
         stage_replay(log, stream=stream)
         stage_fork(log, stream=stream, checkpoint_dir=ckpt_dir,
                    out_path=manifests / "fork_lineage.json")
+        stage_throughput(log, make_trainer=make_trainer, stream=stream, manifests=manifests)
+        stage_audit(log, tokenizer_dir=tokenizer_dir, shard_root=shard_root,
+                    checkpoint_dir=ckpt_dir, manifests=manifests)
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind

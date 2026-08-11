@@ -228,8 +228,19 @@ def test_run_log_has_downstream_pass_lines(tmp_path, corpus) -> None:
     _, text = do_run(corpus, tmp_path / "artifacts")
     for event in ("eval_shard_blocked", "mixture_compiled", "opus_selected",
                   "sequences_packed", "batch_stream_ready", "trained",
-                  "contrastive_delta_s"):
+                  "contrastive_delta_s", "checkpoint_saved", "resume_next_batch_matched",
+                  "replay_hash_matched", "fork_lineage_recorded", "throughput_measured",
+                  "audit_complete"):
         assert any(l.startswith(f"[PASS] {event}") for l in text.splitlines()), event
+
+
+def test_evidence_bundle_is_written(tmp_path, corpus) -> None:
+    artifacts = tmp_path / "artifacts"
+    do_run(corpus, artifacts)
+    assert (artifacts / "manifests" / "evidence.json").exists()
+    assert (artifacts / "manifests" / "evidence.md").exists()
+    evidence = json.loads((artifacts / "manifests" / "evidence.json").read_text(encoding="utf-8"))
+    assert evidence["audit"]["all_passed"] is True
 
 
 def test_run_creates_the_manifests_dir(tmp_path, corpus) -> None:
