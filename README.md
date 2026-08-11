@@ -86,7 +86,7 @@ feature13_replay/          # 13 — replay [a,b) from seed+ledger; hashes match
 feature14_fork/            # 14 — fork onto a new-seed branch; lineage recorded
 feature15_throughput/      # 15 — packing efficiency (logged) + wall-clock throughput (file)
 feature16_audit/           # 16 — cross-check artifacts + evidence.json/.md (nothing hardcoded)
-run_demo.py                # 1.12 + 2.7 + 3.8 — one-command runner: load + clean + tokenizer stages
+run_demo.py                # one-command runner: all 16 stages -> submission_artifacts/ + evidence
 tokenizer/                 # the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
 tests/                     # test_*.py — invariant tests (294 passing, fully offline)
 pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["tests"])
@@ -102,8 +102,14 @@ pytest                 # 294 tests; datasets / huggingface_hub not required
 ## Do a real fetch (network; one-time)
 
 ```bash
-pip install -e ".[dev]"   # pulls datasets + huggingface_hub
-python fetch.py           # fetches ALL lanes into data/raw/ (cached after first run)
+pip install -e ".[dev]"            # pulls datasets + huggingface_hub
+python -m feature1_collect.fetch   # fetches ALL lanes into data/raw/ (cached after first run)
+```
+
+## Run the whole pipeline (one command)
+
+```bash
+python run_demo.py    # all 16 stages on the real corpus -> submission_artifacts/run.log + evidence
 ```
 
 Reproducibility: each source is pinned to an exact upstream revision (recorded in
