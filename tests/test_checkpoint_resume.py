@@ -48,6 +48,27 @@ def test_restore_reproduces_the_model(tmp_path) -> None:
     assert model_hash(restored.model) == model_hash(tr.model)
 
 
+def test_incremental_training_matches_monolithic(tmp_path) -> None:
+    """Train 0->2 then resume 2->4 must equal one 0->4 run: continuing, not restarting."""
+    stream = _stream()
+    mono = train_range(_make(), stream, 0, 4)
+
+    a = _make()
+    train_range(a, stream, 0, 2)
+    save_checkpoint(a, step=2, ledger_offset=2, seed="s", out_dir=str(tmp_path))
+    b, meta = load_checkpoint(str(tmp_path))
+    incr = train_range(b, stream, meta["ledger_offset"], 4)          # steps 2, 3
+
+    assert [r["loss"] for r in incr] == [r["loss"] for r in mono[2:]]
+    assert model_hash(b.model) == model_hash(_make_and_run(stream, 4))  # same final model
+
+
+def _make_and_run(stream, n):
+    tr = _make()
+    train_range(tr, stream, 0, n)
+    return tr.model
+
+
 # -- Feature 12: crash + resume --------------------------------------------
 
 def test_resume_matches_a_clean_run(tmp_path) -> None:

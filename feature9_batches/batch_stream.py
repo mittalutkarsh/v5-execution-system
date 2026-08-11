@@ -107,11 +107,11 @@ class BatchStream:
 class ConsumptionLedger:
     """Append-only record of which batches were consumed, in order."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, *, append: bool = False) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.rows: list[dict[str, Any]] = []
-        self._fh = self.path.open("w", encoding="utf-8", newline="\n")
+        self._fh = self.path.open("a" if append else "w", encoding="utf-8", newline="\n")
 
     def record(self, batch: Batch) -> None:
         row = batch.as_ledger_row()

@@ -71,11 +71,11 @@ class Trainer:
 class LearningLedger:
     """Append-only per-step record linking loss (F1 surprisal) to its batch/source."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, *, append: bool = False) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.rows: list[dict[str, Any]] = []
-        self._fh = self.path.open("w", encoding="utf-8", newline="\n")
+        self._fh = self.path.open("a" if append else "w", encoding="utf-8", newline="\n")
 
     def record(self, *, step: int, batch: Any, loss: float, n_loss_tokens: int) -> None:
         row = {

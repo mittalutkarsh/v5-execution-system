@@ -45,7 +45,7 @@ from feature10_trainer.trainer import (
 )
 from feature3_tokenizer.tokenizer_build import load_frozen_tokenizer
 from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
-from feature11_checkpoint.checkpoint import save_checkpoint, verify_checkpoint
+from feature11_checkpoint.checkpoint import MANIFEST_FILE, load_checkpoint, save_checkpoint, verify_checkpoint
 from feature12_resume.resume import crash_and_resume, train_range
 from feature13_replay.replay import replay_interval
 from feature14_fork.fork import fork_run
@@ -385,18 +385,37 @@ def stage_batches(
 
 def stage_train(
     log: RunLog, *, stream: BatchStream, tokenizer_dir: str, seq_len: int,
-    n_steps: int, manifests: Path, seed: str = _TRAIN_SEED,
+    n_steps: int, manifests: Path, train_checkpoint_dir: str,
+    seed: str = _TRAIN_SEED, resume: bool = True,
 ) -> dict[str, Any]:
-    """Stage 10: deterministically train the tiny MoE; write the learning ledger + ΔS."""
+    """Stage 10: train the tiny MoE toward a TARGET of n_steps total.
+
+    `n_steps` is the cumulative target, not "additional". If a training
+    checkpoint exists and resume=True, load it and continue from its ledger
+    offset (consuming fresh batches, appending to the ledgers); otherwise start
+    fresh. A checkpoint is written at the end, so a later run with a larger
+    n_steps continues instead of retraining from scratch.
+    """
     tok = load_frozen_tokenizer(tokenizer_dir)
     cfg = ModelConfig(vocab_size=len(tok.vocab), seq_len=seq_len)
-    trainer = Trainer(cfg, seed=seed)
-    log.info("moe_params", n=trainer.model.n_params())
 
-    consumption = ConsumptionLedger(str(manifests / "consumption_ledger.jsonl"))
-    learning = LearningLedger(str(manifests / "learning_ledger.jsonl"))
-    last_loss = 0.0
-    for i in range(n_steps):
+    ckpt_ok = resume and (Path(train_checkpoint_dir) / MANIFEST_FILE).exists()
+    if ckpt_ok:
+        trainer, meta = load_checkpoint(train_checkpoint_dir)
+        if meta["config"].get("vocab_size") != len(tok.vocab):  # tokenizer changed -> restart
+            trainer, start_step, ckpt_ok = Trainer(cfg, seed=seed), 0, False
+        else:
+            start_step = meta["ledger_offset"]
+    else:
+        trainer, start_step = Trainer(cfg, seed=seed), 0
+
+    log.info("moe_params", n=trainer.model.n_params())
+    log.info("train_resume", resumed=ckpt_ok, start_step=start_step, target_steps=n_steps)
+
+    consumption = ConsumptionLedger(str(manifests / "consumption_ledger.jsonl"), append=ckpt_ok)
+    learning = LearningLedger(str(manifests / "learning_ledger.jsonl"), append=ckpt_ok)
+    last_loss = None
+    for i in range(start_step, n_steps):
         batch = stream.batch(i)
         consumption.record(batch)
         tokens, pos, allowed, lm = batch_tensors(stream, batch)
@@ -405,12 +424,20 @@ def stage_train(
     consumption.close()
     learning.close()
 
+    # checkpoint at the new total so the next run continues from here
+    save_checkpoint(trainer, step=n_steps, ledger_offset=n_steps, seed=seed,
+                    out_dir=train_checkpoint_dir)
+
+    if last_loss is None:  # already at/over target: recover the final loss from the ledger
+        lines = (manifests / "learning_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+        last_loss = json.loads(lines[-1])["loss_nats"] if lines else 0.0
+
     delta = contrastive_delta_s(trainer.model, tok, CONTRASTIVE_PAIRS, seq_len=seq_len)
     with (manifests / "contrastive_delta_s.json").open("w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps({"kind": "contrastive_delta_s", "pairs": delta},
                             ensure_ascii=False, sort_keys=True, indent=2) + "\n")
 
-    log.passed("trained", steps=n_steps, final_loss=round(last_loss, 6))
+    log.passed("trained", steps=n_steps, resumed_from=start_step, final_loss=round(last_loss, 6))
     log.passed("contrastive_delta_s", pairs=len(delta))
     return {"trainer": trainer, "cfg": cfg, "tokenizer": tok, "n_steps": n_steps,
             "learning_rows": learning.rows, "consumption_rows": consumption.rows}
@@ -508,6 +535,7 @@ def run(
     shard_root: str = _SHARD_ROOT,
     seq_len: int = _SEQ_LEN,
     n_steps: int = _N_STEPS,
+    resume: bool = True,
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -560,6 +588,7 @@ def run(
         train_result = stage_train(
             log, stream=stream, tokenizer_dir=tokenizer_dir, seq_len=seq_len,
             n_steps=n_steps, manifests=manifests,
+            train_checkpoint_dir=str(root / "train_checkpoint"), resume=resume,
         )
         # reproducibility harness (Features 11-14): a tiny model, exercised fast
         tok = train_result["tokenizer"]
