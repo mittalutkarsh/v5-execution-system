@@ -35,6 +35,8 @@ from feature5_firewall.firewall import eval_shards_blocked
 from feature6_mixture.compile_mixture import build_report, write_report
 from feature6_mixture.mixture_config import DEFAULT_MIXTURE
 from feature7_opus.opus_selector import Candidate, OpusSelector, SelectorConfig, TIER_QUALITY
+from feature4_shards.shard_reader import iter_docs
+from feature8_packer.packer import pack_documents, packed_batch_report
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -46,6 +48,7 @@ __all__ = [
     "stage_firewall",
     "stage_mixture",
     "stage_opus",
+    "stage_packer",
     "run",
     "main",
 ]
@@ -53,6 +56,7 @@ __all__ = [
 ARTIFACTS_ROOT: Final[str] = "submission_artifacts"
 _TOKENIZER_DIR: Final[str] = "tokenizer"
 _SHARD_ROOT: Final[str] = "data/shards"
+_SEQ_LEN: Final[int] = 256
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -316,6 +320,23 @@ def stage_opus(
     return summary
 
 
+def stage_packer(
+    log: RunLog, *, shard_root: str, seq_len: int, report_path: str | Path
+):
+    """Stage 8: pack train docs into fixed-length sequences; report efficiency."""
+    sequences = pack_documents(iter_docs(shard_root, split="train"), seq_len=seq_len)
+    report = packed_batch_report(sequences, seq_len=seq_len)
+    with Path(report_path).open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+    log.info("packing_written", file=Path(report_path).name)
+    log.passed(
+        "sequences_packed",
+        seqs=report["n_sequences"],
+        efficiency=round(report["packing_efficiency"], 4),
+    )
+    return sequences
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -326,6 +347,7 @@ def run(
     tokenizer_dir: str = _TOKENIZER_DIR,
     vocab_size: int = DEFAULT_VOCAB_SIZE,
     shard_root: str = _SHARD_ROOT,
+    seq_len: int = _SEQ_LEN,
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -369,6 +391,10 @@ def run(
         stage_opus(
             log, index=index, mixture_report=mixture_report,
             ledger_path=manifests / "opus_decision_ledger.jsonl",
+        )
+        stage_packer(
+            log, shard_root=shard_root, seq_len=seq_len,
+            report_path=manifests / "packing_report.json",
         )
         log.info("run_complete")
     finally:
