@@ -219,12 +219,25 @@ def stage_tokenizer(
     The freeze contract: the on-disk tokenizer's recomputed content hash must
     match its manifest, and encode->decode must return every cleaned document
     verbatim (real evidence, not a canned string).
+
+    The tokenizer is deterministic, so if a valid frozen one already exists it is
+    reused instead of retrained -- a build cache that keeps repeated training
+    runs fast without changing the result (identical bytes and hash).
     """
-    tok = build_frozen_tokenizer(
-        clean_root=clean_root, out_dir=tokenizer_dir, vocab_size=vocab_size
-    )
-    if not verify_frozen(tokenizer_dir):
-        raise ValueError("frozen tokenizer hash does not match its manifest")
+    try:
+        manifest = json.loads((Path(tokenizer_dir) / "tokenizer_manifest.json").read_text(encoding="utf-8"))
+        already_valid = manifest.get("vocab_size") == vocab_size and verify_frozen(tokenizer_dir)
+    except (FileNotFoundError, KeyError, ValueError):
+        already_valid = False
+
+    if already_valid:
+        tok = load_frozen_tokenizer(tokenizer_dir)
+    else:
+        tok = build_frozen_tokenizer(
+            clean_root=clean_root, out_dir=tokenizer_dir, vocab_size=vocab_size
+        )
+        if not verify_frozen(tokenizer_dir):
+            raise ValueError("frozen tokenizer hash does not match its manifest")
 
     checked = sample_clean_corpus(clean_root, docs_per_lane=1, max_chars=500)
     for text in checked:
