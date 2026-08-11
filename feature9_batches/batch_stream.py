@@ -59,6 +59,7 @@ class BatchStream:
         self.sequences = sequences
         self.seed = seed
         self.batch_size = batch_size
+        self._lane_weights = lane_weights
 
         by_lane: dict[str, list[int]] = {}
         for j, s in enumerate(sequences):
@@ -77,6 +78,13 @@ class BatchStream:
 
     def __len__(self) -> int:
         return len(self.sequences)
+
+    def reseed(self, seed: str) -> "BatchStream":
+        """A new stream over the same pool + mixture but a different seed (for forks)."""
+        return BatchStream(
+            self.sequences, seed=seed, batch_size=self.batch_size,
+            lane_weights=self._lane_weights,
+        )
 
     def batch(self, index: int) -> Batch:
         """Reconstruct batch `index` — a pure function of (seed, index, pool)."""

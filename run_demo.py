@@ -45,6 +45,10 @@ from feature10_trainer.trainer import (
 )
 from feature3_tokenizer.tokenizer_build import load_frozen_tokenizer
 from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
+from feature11_checkpoint.checkpoint import save_checkpoint, verify_checkpoint
+from feature12_resume.resume import crash_and_resume, train_range
+from feature13_replay.replay import replay_interval
+from feature14_fork.fork import fork_run
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -59,6 +63,10 @@ __all__ = [
     "stage_packer",
     "stage_batches",
     "stage_train",
+    "stage_checkpoint",
+    "stage_resume",
+    "stage_replay",
+    "stage_fork",
     "run",
     "main",
 ]
@@ -404,6 +412,49 @@ def stage_train(
             "learning_rows": learning.rows, "consumption_rows": consumption.rows}
 
 
+def stage_checkpoint(log: RunLog, *, make_trainer, stream, checkpoint_dir: str) -> None:
+    """Stage 11: train a few steps, checkpoint (model+optim+rng+offset), verify."""
+    tr = make_trainer()
+    train_range(tr, stream, 0, 4)
+    save_checkpoint(tr, step=4, ledger_offset=4, seed=stream.seed, out_dir=checkpoint_dir)
+    ok = verify_checkpoint(checkpoint_dir)
+    if not ok:
+        raise ValueError("checkpoint failed to verify on restore")
+    log.passed("checkpoint_saved", step=4, ledger_offset=4, verified=ok)
+
+
+def stage_resume(log: RunLog, *, make_trainer, stream, checkpoint_dir: str) -> None:
+    """Stage 12: crash at a set batch, resume, prove the next batch matches."""
+    result = crash_and_resume(make_trainer, stream, total=6, crash_at=3,
+                              checkpoint_dir=checkpoint_dir, seed=stream.seed)
+    if not (result["no_skip_or_repeat"] and result["loss_trajectory_matched"]):
+        raise ValueError("resume did not reproduce the clean run")
+    log.passed(
+        "resume_next_batch_matched",
+        offset=result["resume_offset"],
+        no_skip_or_repeat=result["no_skip_or_repeat"],
+        loss_matched=result["loss_trajectory_matched"],
+    )
+
+
+def stage_replay(log: RunLog, *, stream) -> None:
+    """Stage 13: replay an interval from the ledger and match hashes."""
+    ledger = [stream.batch(i).as_ledger_row() for i in range(6)]
+    result = replay_interval(stream, ledger, 1, 5)
+    if not result["matched"]:
+        raise ValueError("replay hashes did not match the ledger")
+    log.passed("replay_hash_matched", interval="1-5", checked=result["checked"], matched=result["matched"])
+
+
+def stage_fork(log: RunLog, *, stream, checkpoint_dir: str, out_path: Path) -> None:
+    """Stage 14: fork from the checkpoint onto a new-seed branch; record lineage."""
+    lineage = fork_run(checkpoint_dir, stream, branch_id="branch-a", fork_seed="v5-fork-a", steps=3)
+    with out_path.open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(lineage, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+    log.passed("fork_lineage_recorded", branch=lineage["branch_id"],
+               diverged_at=lineage["diverged_at"], diverged=lineage["diverged"])
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -465,10 +516,22 @@ def run(
             report_path=manifests / "packing_report.json",
         )
         stream = stage_batches(log, sequences=sequences, mixture_report=mixture_report)
-        stage_train(
+        train_result = stage_train(
             log, stream=stream, tokenizer_dir=tokenizer_dir, seq_len=seq_len,
             n_steps=n_steps, manifests=manifests,
         )
+        # reproducibility harness (Features 11-14): a tiny model, exercised fast
+        tok = train_result["tokenizer"]
+        repro_cfg = ModelConfig(vocab_size=len(tok.vocab), d_model=32, n_layers=1,
+                                n_heads=2, n_experts=2, top_k=1, d_ff=64, seq_len=seq_len)
+        make_trainer = lambda: Trainer(repro_cfg, seed="v5-repro")  # noqa: E731
+        ckpt_dir = str(root / "checkpoint")
+        stage_checkpoint(log, make_trainer=make_trainer, stream=stream, checkpoint_dir=ckpt_dir)
+        stage_resume(log, make_trainer=make_trainer, stream=stream,
+                     checkpoint_dir=str(manifests / "resume_checkpoint"))
+        stage_replay(log, stream=stream)
+        stage_fork(log, stream=stream, checkpoint_dir=ckpt_dir,
+                   out_path=manifests / "fork_lineage.json")
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind
