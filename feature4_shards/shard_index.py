@@ -34,6 +34,7 @@ def build_index(
             "shard_id": m["shard_id"], "hash": m["hash"], "file": m["file"],
             "n_tokens": m["n_tokens"], "n_docs": m["n_docs"],
             "split": m["split"], "lane": m["lane"],
+            "provenance_tiers": m["provenance_tiers"],
         }
         for m in manifests
     ]

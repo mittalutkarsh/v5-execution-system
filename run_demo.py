@@ -34,6 +34,7 @@ from feature4_shards.shard_index import verify_shards
 from feature5_firewall.firewall import eval_shards_blocked
 from feature6_mixture.compile_mixture import build_report, write_report
 from feature6_mixture.mixture_config import DEFAULT_MIXTURE
+from feature7_opus.opus_selector import Candidate, OpusSelector, SelectorConfig, TIER_QUALITY
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -44,6 +45,7 @@ __all__ = [
     "stage_shards",
     "stage_firewall",
     "stage_mixture",
+    "stage_opus",
     "run",
     "main",
 ]
@@ -276,6 +278,44 @@ def stage_mixture(
     return report
 
 
+def _floor_tokens_per_lane(mixture_report: dict[str, Any]) -> dict[str, int]:
+    """Aggregate protected-floor tokens per lane across all phases."""
+    floors: dict[str, int] = {}
+    for phase in mixture_report["phases"]:
+        for lane, info in phase["lanes"].items():
+            floors[lane] = floors.get(lane, 0) + int(info["floor"] * phase["budget"])
+    return floors
+
+
+def stage_opus(
+    log: RunLog, *, index: dict[str, Any], mixture_report: dict[str, Any], ledger_path: str | Path
+) -> dict[str, Any]:
+    """Stage 7: run the OPUS accept/reject/defer selection over train shards."""
+    cfg = SelectorConfig(
+        lane_targets=mixture_report["lane_totals"],
+        lane_floors=_floor_tokens_per_lane(mixture_report),
+    )
+    candidates = [
+        Candidate(
+            id=s["shard_id"], lane=s["lane"], tokens=s["n_tokens"],
+            quality=max(TIER_QUALITY[t] for t in s["provenance_tiers"]),
+        )
+        for s in index["shards"] if s["split"] == "train"
+    ]
+    sel = OpusSelector(cfg).run(candidates)
+    sel.write_ledger(str(ledger_path))
+    summary = sel.summary()
+    log.info("opus_ledger_written", file=Path(ledger_path).name)
+    log.passed(
+        "opus_selected",
+        accepted=summary["decisions"]["accept"],
+        deferred=summary["decisions"]["defer"],
+        rejected=summary["decisions"]["reject"],
+        floors_met=summary["floors_met"],
+    )
+    return summary
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -325,7 +365,11 @@ def run(
             shard_root=shard_root,
         )
         stage_firewall(log, index=index)
-        stage_mixture(log, index=index, summary_path=manifests / "mixture_plan.json")
+        mixture_report = stage_mixture(log, index=index, summary_path=manifests / "mixture_plan.json")
+        stage_opus(
+            log, index=index, mixture_report=mixture_report,
+            ledger_path=manifests / "opus_decision_ledger.jsonl",
+        )
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind
