@@ -37,6 +37,8 @@ from feature6_mixture.mixture_config import DEFAULT_MIXTURE
 from feature7_opus.opus_selector import Candidate, OpusSelector, SelectorConfig, TIER_QUALITY
 from feature4_shards.shard_reader import iter_docs
 from feature8_packer.packer import pack_documents, packed_batch_report
+from feature9_batches.batch_stream import BatchStream
+from feature9_batches.rng import MASTER_SEED
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -49,6 +51,7 @@ __all__ = [
     "stage_mixture",
     "stage_opus",
     "stage_packer",
+    "stage_batches",
     "run",
     "main",
 ]
@@ -57,6 +60,7 @@ ARTIFACTS_ROOT: Final[str] = "submission_artifacts"
 _TOKENIZER_DIR: Final[str] = "tokenizer"
 _SHARD_ROOT: Final[str] = "data/shards"
 _SEQ_LEN: Final[int] = 256
+_BATCH_SIZE: Final[int] = 8
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -337,6 +341,27 @@ def stage_packer(
     return sequences
 
 
+def stage_batches(
+    log: RunLog, *, sequences, mixture_report: dict[str, Any],
+    seed: str = MASTER_SEED, batch_size: int = _BATCH_SIZE,
+) -> BatchStream:
+    """Stage 9: build the reproducible, mixture-weighted batch stream."""
+    stream = BatchStream(
+        sequences, seed=seed, batch_size=batch_size,
+        lane_weights=mixture_report["lane_totals"],
+    )
+    # reproducibility proof: a fresh stream (seed only) rebuilds sampled batches
+    fresh = BatchStream(sequences, seed=seed, batch_size=batch_size,
+                        lane_weights=mixture_report["lane_totals"])
+    ok = all(stream.batch(i).content_hash == fresh.batch(i).content_hash for i in (0, 1, 7, 15))
+    if not ok:
+        raise ValueError("batch stream is not reproducible from its seed")
+    log.passed(
+        "batch_stream_ready", pool=len(sequences), batch_size=batch_size, reproducible=ok,
+    )
+    return stream
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -392,10 +417,11 @@ def run(
             log, index=index, mixture_report=mixture_report,
             ledger_path=manifests / "opus_decision_ledger.jsonl",
         )
-        stage_packer(
+        sequences = stage_packer(
             log, shard_root=shard_root, seq_len=seq_len,
             report_path=manifests / "packing_report.json",
         )
+        stage_batches(log, sequences=sequences, mixture_report=mixture_report)
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind

@@ -40,6 +40,7 @@ class PackedSequence:
     segment_ids: list[int]   # doc index within the sequence; PAD_SEGMENT for padding
     loss_mask: list[int]     # 1 if this position's next-token target is real & same-doc
     doc_ids: list[str]
+    lane: str | None = None  # lane of the sequence (its first document)
     cont_span: tuple[int, int] | None = None  # (start, end) for contrastive sequences
 
     def n_real_tokens(self) -> int:
@@ -72,17 +73,19 @@ def pack_documents(
     seg: list[int] = []
     ids: list[str] = []
     seg_no = 0
+    lane: str | None = None
 
     def flush() -> None:
-        nonlocal tok, pos, seg, ids, seg_no
+        nonlocal tok, pos, seg, ids, seg_no, lane
         if not tok:
             return
         pad = seq_len - len(tok)
         full_tok = tok + [pad_id] * pad
         full_pos = pos + [0] * pad
         full_seg = seg + [PAD_SEGMENT] * pad
-        seqs.append(PackedSequence(full_tok, full_pos, full_seg, _loss_mask(full_seg), list(ids)))
-        tok, pos, seg, ids, seg_no = [], [], [], [], 0
+        seqs.append(PackedSequence(
+            full_tok, full_pos, full_seg, _loss_mask(full_seg), list(ids), lane=lane))
+        tok, pos, seg, ids, seg_no, lane = [], [], [], [], 0, None
 
     for doc in docs:
         t = list(doc["tokens"])[:seq_len]
@@ -90,8 +93,10 @@ def pack_documents(
             continue
         if tok and len(tok) + len(t) > seq_len:
             flush()
+        if lane is None:
+            lane = doc.get("lane")           # lane of the sequence's first doc
         tok.extend(t)
-        pos.extend(range(len(t)))          # position ids reset per doc
+        pos.extend(range(len(t)))            # position ids reset per doc
         seg.extend([seg_no] * len(t))
         ids.append(doc["doc_id"])
         seg_no += 1
