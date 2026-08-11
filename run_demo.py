@@ -32,6 +32,8 @@ from feature3_tokenizer.tokenizer_build import DEFAULT_VOCAB_SIZE, build_frozen_
 from feature4_shards.shard_corpus import shard_corpus
 from feature4_shards.shard_index import verify_shards
 from feature5_firewall.firewall import eval_shards_blocked
+from feature6_mixture.compile_mixture import build_report, write_report
+from feature6_mixture.mixture_config import DEFAULT_MIXTURE
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -41,6 +43,7 @@ __all__ = [
     "stage_tokenizer",
     "stage_shards",
     "stage_firewall",
+    "stage_mixture",
     "run",
     "main",
 ]
@@ -252,6 +255,27 @@ def stage_firewall(log: RunLog, *, index: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def stage_mixture(
+    log: RunLog, *, index: dict[str, Any], summary_path: str | Path
+) -> dict[str, Any]:
+    """Stage 6: compile the India-first curriculum into per-lane token targets."""
+    available: dict[str, int] = {}
+    for s in index["shards"]:
+        if s["split"] == "train":
+            available[s["lane"]] = available.get(s["lane"], 0) + s["n_tokens"]
+    report = build_report(DEFAULT_MIXTURE, available=available)
+    write_report(report, str(summary_path))
+    if not report["all_floors_met"]:
+        raise ValueError("mixture floors not met — India-first lanes under-allocated")
+    log.info("mixture_written", file=Path(summary_path).name)
+    log.passed(
+        "mixture_compiled",
+        phases=len(report["phases"]),
+        floors_met=report["all_floors_met"],
+    )
+    return report
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -301,6 +325,7 @@ def run(
             shard_root=shard_root,
         )
         stage_firewall(log, index=index)
+        stage_mixture(log, index=index, summary_path=manifests / "mixture_plan.json")
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind
