@@ -37,8 +37,14 @@ from feature6_mixture.mixture_config import DEFAULT_MIXTURE
 from feature7_opus.opus_selector import Candidate, OpusSelector, SelectorConfig, TIER_QUALITY
 from feature4_shards.shard_reader import iter_docs
 from feature8_packer.packer import pack_documents, packed_batch_report
-from feature9_batches.batch_stream import BatchStream
+from feature9_batches.batch_stream import BatchStream, ConsumptionLedger
 from feature9_batches.rng import MASTER_SEED
+from feature10_trainer.moe_model import ModelConfig
+from feature10_trainer.trainer import (
+    LearningLedger, Trainer, batch_tensors, contrastive_delta_s,
+)
+from feature3_tokenizer.tokenizer_build import load_frozen_tokenizer
+from feature1_collect.contrastive_pairs import CONTRASTIVE_PAIRS
 
 __all__ = [
     "ARTIFACTS_ROOT",
@@ -52,6 +58,7 @@ __all__ = [
     "stage_opus",
     "stage_packer",
     "stage_batches",
+    "stage_train",
     "run",
     "main",
 ]
@@ -61,6 +68,8 @@ _TOKENIZER_DIR: Final[str] = "tokenizer"
 _SHARD_ROOT: Final[str] = "data/shards"
 _SEQ_LEN: Final[int] = 256
 _BATCH_SIZE: Final[int] = 8
+_N_STEPS: Final[int] = 30
+_TRAIN_SEED: Final[str] = "v5-trainer-2026"
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -362,6 +371,39 @@ def stage_batches(
     return stream
 
 
+def stage_train(
+    log: RunLog, *, stream: BatchStream, tokenizer_dir: str, seq_len: int,
+    n_steps: int, manifests: Path, seed: str = _TRAIN_SEED,
+) -> dict[str, Any]:
+    """Stage 10: deterministically train the tiny MoE; write the learning ledger + ΔS."""
+    tok = load_frozen_tokenizer(tokenizer_dir)
+    cfg = ModelConfig(vocab_size=len(tok.vocab), seq_len=seq_len)
+    trainer = Trainer(cfg, seed=seed)
+    log.info("moe_params", n=trainer.model.n_params())
+
+    consumption = ConsumptionLedger(str(manifests / "consumption_ledger.jsonl"))
+    learning = LearningLedger(str(manifests / "learning_ledger.jsonl"))
+    last_loss = 0.0
+    for i in range(n_steps):
+        batch = stream.batch(i)
+        consumption.record(batch)
+        tokens, pos, allowed, lm = batch_tensors(stream, batch)
+        last_loss = trainer.train_step(tokens, pos, allowed, lm)
+        learning.record(step=i, batch=batch, loss=last_loss, n_loss_tokens=int(lm.sum()))
+    consumption.close()
+    learning.close()
+
+    delta = contrastive_delta_s(trainer.model, tok, CONTRASTIVE_PAIRS, seq_len=seq_len)
+    with (manifests / "contrastive_delta_s.json").open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps({"kind": "contrastive_delta_s", "pairs": delta},
+                            ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+
+    log.passed("trained", steps=n_steps, final_loss=round(last_loss, 6))
+    log.passed("contrastive_delta_s", pairs=len(delta))
+    return {"trainer": trainer, "cfg": cfg, "tokenizer": tok, "n_steps": n_steps,
+            "learning_rows": learning.rows, "consumption_rows": consumption.rows}
+
+
 def run(
     *,
     raw_root: str = "data/raw",
@@ -373,6 +415,7 @@ def run(
     vocab_size: int = DEFAULT_VOCAB_SIZE,
     shard_root: str = _SHARD_ROOT,
     seq_len: int = _SEQ_LEN,
+    n_steps: int = _N_STEPS,
 ) -> int:
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
@@ -421,7 +464,11 @@ def run(
             log, shard_root=shard_root, seq_len=seq_len,
             report_path=manifests / "packing_report.json",
         )
-        stage_batches(log, sequences=sequences, mixture_report=mixture_report)
+        stream = stage_batches(log, sequences=sequences, mixture_report=mixture_report)
+        stage_train(
+            log, stream=stream, tokenizer_dir=tokenizer_dir, seq_len=seq_len,
+            n_steps=n_steps, manifests=manifests,
+        )
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind

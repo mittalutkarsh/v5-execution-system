@@ -70,7 +70,7 @@ def do_run(corpus, artifacts_root):
     clean_root = str(artifacts_root) + "-clean"
     code = run(**corpus, artifacts_root=str(artifacts_root), clean_root=clean_root,
                tokenizer_dir=str(artifacts_root) + "-tok", vocab_size=400,
-               shard_root=str(artifacts_root) + "-shards")
+               shard_root=str(artifacts_root) + "-shards", n_steps=4)
     return code, (artifacts_root / "run.log").read_text(encoding="utf-8")
 
 
@@ -196,9 +196,9 @@ def test_two_runs_produce_byte_identical_logs(tmp_path, corpus) -> None:
     """Different artifact roots, same bytes -- no clock, no paths."""
     a, b = tmp_path / "artifacts-a", tmp_path / "deeper" / "artifacts-b"
     run(**corpus, artifacts_root=str(a), clean_root=str(tmp_path / "clean-a"),
-        tokenizer_dir=str(tmp_path / "tok-a"), vocab_size=400, shard_root=str(tmp_path / "sh-a"))
+        tokenizer_dir=str(tmp_path / "tok-a"), vocab_size=400, shard_root=str(tmp_path / "sh-a"), n_steps=4)
     run(**corpus, artifacts_root=str(b), clean_root=str(tmp_path / "clean-b"),
-        tokenizer_dir=str(tmp_path / "tok-b"), vocab_size=400, shard_root=str(tmp_path / "sh-b"))
+        tokenizer_dir=str(tmp_path / "tok-b"), vocab_size=400, shard_root=str(tmp_path / "sh-b"), n_steps=4)
     assert (a / "run.log").read_bytes() == (b / "run.log").read_bytes()
 
 
@@ -222,6 +222,14 @@ def test_run_log_has_the_shards_pass_line(tmp_path, corpus) -> None:
     pass_lines = [l for l in text.splitlines() if l.startswith("[PASS] shards_written")]
     assert len(pass_lines) == 1
     assert "verified=True" in pass_lines[0] and "tokens=" in pass_lines[0]
+
+
+def test_run_log_has_downstream_pass_lines(tmp_path, corpus) -> None:
+    _, text = do_run(corpus, tmp_path / "artifacts")
+    for event in ("eval_shard_blocked", "mixture_compiled", "opus_selected",
+                  "sequences_packed", "batch_stream_ready", "trained",
+                  "contrastive_delta_s"):
+        assert any(l.startswith(f"[PASS] {event}") for l in text.splitlines()), event
 
 
 def test_run_creates_the_manifests_dir(tmp_path, corpus) -> None:
