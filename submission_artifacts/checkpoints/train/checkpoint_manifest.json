@@ -1,0 +1,18 @@
+{
+  "config": {
+    "d_ff": 256,
+    "d_model": 128,
+    "n_experts": 4,
+    "n_heads": 4,
+    "n_layers": 2,
+    "seq_len": 256,
+    "top_k": 2,
+    "vocab_size": 12000
+  },
+  "kind": "checkpoint_manifest",
+  "ledger_offset": 300,
+  "model_hash": "3b8b27b168bdf12e56f1fc3a0801a4bace5c8f769898749ab5d92e66011e1a24",
+  "n_params": 3766536,
+  "seed": "v5-trainer-2026",
+  "step": 300
+}

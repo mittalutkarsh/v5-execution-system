@@ -1,0 +1,18 @@
+{
+  "config": {
+    "d_ff": 64,
+    "d_model": 32,
+    "n_experts": 2,
+    "n_heads": 2,
+    "n_layers": 1,
+    "seq_len": 256,
+    "top_k": 1,
+    "vocab_size": 12000
+  },
+  "kind": "checkpoint_manifest",
+  "ledger_offset": 4,
+  "model_hash": "4a11b4ba78b9bda466a0cad8b067f9f69ae10e4f5d01fa6a2b09a3a90154a4ab",
+  "n_params": 789058,
+  "seed": "v5-batch-stream-2026",
+  "step": 4
+}

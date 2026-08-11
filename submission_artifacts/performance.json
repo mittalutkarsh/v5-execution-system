@@ -1,0 +1,13 @@
+{
+  "kind": "performance",
+  "loss_positions_total": 2765120,
+  "packing_efficiency": 0.8892,
+  "padding_tokens": 346334,
+  "real_tokens": 2778146,
+  "throughput": {
+    "loss_bearing_tokens": 9594,
+    "loss_tokens_per_sec": 11661.94,
+    "seconds": 0.8227,
+    "steps": 5
+  }
+}

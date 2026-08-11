@@ -211,9 +211,9 @@ def test_run_log_has_the_clean_pass_line(tmp_path, corpus) -> None:
 
 def test_run_log_has_the_tokenizer_pass_line(tmp_path, corpus) -> None:
     _, text = do_run(corpus, tmp_path / "artifacts")
-    pass_lines = [l for l in text.splitlines() if l.startswith("[PASS] tokenizer_frozen")]
-    assert len(pass_lines) == 1
-    assert "vocab=" in pass_lines[0] and "hash=" in pass_lines[0]
+    verified = [l for l in text.splitlines() if l.startswith("[PASS] tokenizer_hash_verified")]
+    assert len(verified) == 1 and "vocab=" in verified[0] and "hash=" in verified[0]
+    assert any(l.startswith("[PASS] tokenizer_frozen") for l in text.splitlines())
     assert "[INFO] tokenizer_roundtrip lanes_checked=" in text
 
 
@@ -234,13 +234,26 @@ def test_run_log_has_downstream_pass_lines(tmp_path, corpus) -> None:
         assert any(l.startswith(f"[PASS] {event}") for l in text.splitlines()), event
 
 
-def test_evidence_bundle_is_written(tmp_path, corpus) -> None:
+def test_evidence_bundle_matches_required_structure(tmp_path, corpus) -> None:
     artifacts = tmp_path / "artifacts"
     do_run(corpus, artifacts)
-    assert (artifacts / "manifests" / "evidence.json").exists()
-    assert (artifacts / "manifests" / "evidence.md").exists()
-    evidence = json.loads((artifacts / "manifests" / "evidence.json").read_text(encoding="utf-8"))
-    assert evidence["audit"]["all_passed"] is True
+    # the exact tree the assignment requires
+    assert (artifacts / "run.log").exists()
+    assert (artifacts / "evidence.json").exists()
+    assert (artifacts / "evidence.md").exists()
+    assert (artifacts / "performance.json").exists()
+    assert (artifacts / "manifests").is_dir()
+    assert (artifacts / "ledgers").is_dir()
+    assert (artifacts / "checkpoints").is_dir()
+    # ledgers + checkpoints landed in the right places
+    assert (artifacts / "ledgers" / "learning_ledger.jsonl").exists()
+    assert (artifacts / "ledgers" / "consumption_ledger.jsonl").exists()
+    assert (artifacts / "checkpoints" / "main" / "checkpoint_manifest.json").exists()
+    evidence = json.loads((artifacts / "evidence.json").read_text(encoding="utf-8"))
+    assert evidence["all_passed"] is True
+    assert set(evidence["requirements"]) >= {"Tokenizer integrity", "Crash recovery", "Replay"}
+    assert all(r["result"] == "PASS" for r in evidence["requirements"].values())
+    assert "| Requirement | Result | Evidence |" in (artifacts / "evidence.md").read_text(encoding="utf-8")
 
 
 def test_run_creates_the_manifests_dir(tmp_path, corpus) -> None:

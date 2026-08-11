@@ -1,0 +1,113 @@
+{
+  "all_floors_met": true,
+  "coverage": {
+    "code": {
+      "available": 2315931,
+      "needs_repetition": false,
+      "planned": 327150
+    },
+    "indic": {
+      "available": 1134921,
+      "needs_repetition": true,
+      "planned": 1496400
+    },
+    "math": {
+      "available": 1485142,
+      "needs_repetition": false,
+      "planned": 230400
+    },
+    "multilingual": {
+      "available": 760753,
+      "needs_repetition": false,
+      "planned": 351600
+    },
+    "web": {
+      "available": 4612704,
+      "needs_repetition": false,
+      "planned": 594450
+    }
+  },
+  "kind": "mixture_plan",
+  "lane_totals": {
+    "code": 327150,
+    "indic": 1496400,
+    "math": 230400,
+    "multilingual": 351600,
+    "web": 594450
+  },
+  "phases": [
+    {
+      "budget": 900000,
+      "lanes": {
+        "code": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.164,
+          "planned_tokens": 147600
+        },
+        "indic": {
+          "floor": 0.15,
+          "meets_floor": true,
+          "planned_share": 0.314,
+          "planned_tokens": 282600
+        },
+        "math": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.123,
+          "planned_tokens": 110700
+        },
+        "multilingual": {
+          "floor": 0.03,
+          "meets_floor": true,
+          "planned_share": 0.071,
+          "planned_tokens": 63900
+        },
+        "web": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.328,
+          "planned_tokens": 295200
+        }
+      },
+      "name": "warmup"
+    },
+    {
+      "budget": 2100000,
+      "lanes": {
+        "code": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.0855,
+          "planned_tokens": 179550
+        },
+        "indic": {
+          "floor": 0.35,
+          "meets_floor": true,
+          "planned_share": 0.578,
+          "planned_tokens": 1213800
+        },
+        "math": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.057,
+          "planned_tokens": 119700
+        },
+        "multilingual": {
+          "floor": 0.08,
+          "meets_floor": true,
+          "planned_share": 0.137,
+          "planned_tokens": 287700
+        },
+        "web": {
+          "floor": 0.0,
+          "meets_floor": true,
+          "planned_share": 0.1425,
+          "planned_tokens": 299250
+        }
+      },
+      "name": "india_emphasis"
+    }
+  ],
+  "total_tokens": 3000000
+}

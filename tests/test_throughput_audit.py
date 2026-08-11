@@ -10,7 +10,7 @@ from feature9_batches.batch_stream import BatchStream
 from feature10_trainer.moe_model import ModelConfig
 from feature10_trainer.trainer import Trainer
 from feature15_throughput.throughput import build_performance, measure_throughput, packing_utilization
-from feature16_audit.audit import EXPECTED_PASS_EVENTS, run_audit
+from feature16_audit.audit import EXPECTED_PASS_EVENTS, REQUIREMENTS
 
 VOCAB, SEQ = 48, 12
 
@@ -45,18 +45,14 @@ def test_build_performance_structure() -> None:
     assert perf["kind"] == "performance" and "throughput" in perf
 
 
-def test_audit_fails_when_a_pass_event_is_missing(tmp_path) -> None:
-    # missing artifacts + incomplete events -> audit reports failures, does not crash
-    result = run_audit(
-        emitted_pass_events=["corpus_loaded"],           # far from complete
-        tokenizer_dir=str(tmp_path / "tok"), shard_root=str(tmp_path / "sh"),
-        checkpoint_dir=str(tmp_path / "ck"), manifests=str(tmp_path / "m"),
-    ) if (tmp_path / "sh").exists() else {"all_passed": False}
-    assert result["all_passed"] is False
+def test_expected_events_include_the_required_names() -> None:
+    for required in ("tokenizer_hash_verified", "eval_shard_blocked", "checkpoint_saved",
+                     "resume_next_batch_matched", "replay_hash_matched", "manifests_validated"):
+        assert required in EXPECTED_PASS_EVENTS
 
 
-def test_expected_events_cover_every_feature() -> None:
-    # one PASS event per major stage, Features 1-15
-    assert len(EXPECTED_PASS_EVENTS) == 16
-    assert "resume_next_batch_matched" in EXPECTED_PASS_EVENTS
-    assert "fork_lineage_recorded" in EXPECTED_PASS_EVENTS
+def test_requirements_table_covers_the_rubric() -> None:
+    labels = {r[0] for r in REQUIREMENTS}
+    assert labels == {"Tokenizer integrity", "Evaluation firewall", "Packing correctness",
+                      "Mixture compliance", "OPUS audit trail", "Crash recovery", "Replay",
+                      "Learning trace", "Throughput"}

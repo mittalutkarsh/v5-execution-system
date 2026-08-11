@@ -1,0 +1,10 @@
+{
+  "capacity_tokens": 3124480,
+  "kind": "packing_report",
+  "loss_positions": 2765120,
+  "n_sequences": 12205,
+  "packing_efficiency": 0.8891546753379762,
+  "padding_tokens": 346334,
+  "real_tokens": 2778146,
+  "seq_len": 256
+}

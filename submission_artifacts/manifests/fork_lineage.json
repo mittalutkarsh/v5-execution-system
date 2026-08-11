@@ -1,0 +1,19 @@
+{
+  "branch_batch_ids": [
+    "aab7902c2b774226",
+    "d1c43314462db697",
+    "521953d0aa49eb7c"
+  ],
+  "branch_id": "branch-a",
+  "diverged": true,
+  "diverged_at": 4,
+  "kind": "fork_lineage",
+  "parent": {
+    "checkpoint_hash": "4a11b4ba78b9bda466a0cad8b067f9f69ae10e4f5d01fa6a2b09a3a90154a4ab",
+    "ledger_offset": 4,
+    "seed": "v5-batch-stream-2026",
+    "step": 4
+  },
+  "seed": "v5-fork-a",
+  "steps": 3
+}

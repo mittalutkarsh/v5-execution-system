@@ -4,8 +4,12 @@ A small but complete, reproducible and auditable **Training Data Execution Syste
 for LLM pretraining (Session 6 assignment). Built epic by epic; the delivery plan lives
 in the companion tracker (`session6_plan.md` / the Assignment page).
 
-> This README grows as features land. The full README, the one-command `run_demo.py`,
-> and the evidence bundle are built at the final feature.
+> Complete: all 16 features. `python run_demo.py` runs the whole path
+> (documents → shards → manifests → mixture → packing → batches → training →
+> ledgers → checkpoint → crash → resume → replay → fork → audit) on the
+> committed corpus, **offline, no network, no manual steps**, and writes the
+> full `submission_artifacts/` evidence bundle. The governing invariant: a seed
+> plus a ledger offset reconstructs any batch byte-for-byte.
 
 ## Status
 
@@ -88,7 +92,7 @@ feature15_throughput/      # 15 — packing efficiency (logged) + wall-clock thr
 feature16_audit/           # 16 — cross-check artifacts + evidence.json/.md (nothing hardcoded)
 run_demo.py                # one-command runner: all 16 stages -> submission_artifacts/ + evidence
 tokenizer/                 # the FROZEN artifact: vocab.json, merges.txt, manifest (committed)
-tests/                     # test_*.py — invariant tests (294 passing, fully offline)
+tests/                     # test_*.py — invariant tests (295 passing, fully offline)
 pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["tests"])
 ```
 
@@ -96,7 +100,7 @@ pyproject.toml             # deps + pytest config (pythonpath=".", testpaths=["t
 
 ```bash
 pip install pytest
-pytest                 # 294 tests; datasets / huggingface_hub not required
+pytest                 # 295 tests; datasets / huggingface_hub not required
 ```
 
 ## Do a real fetch (network; one-time)
@@ -108,9 +112,31 @@ python -m feature1_collect.fetch   # fetches ALL lanes into data/raw/ (cached af
 
 ## Run the whole pipeline (one command)
 
+The corpus is committed, so this needs **no network and no setup** — clone and run:
+
 ```bash
-python run_demo.py    # all 16 stages on the real corpus -> submission_artifacts/run.log + evidence
+python run_demo.py    # all 16 stages -> submission_artifacts/ (run.log + evidence bundle)
 ```
+
+It regenerates the full evidence tree:
+
+```
+submission_artifacts/
+  run.log             # complete [PASS]/[INFO] event sequence
+  evidence.json       # per-requirement PASS/FAIL + pointer to the proving artifact
+  evidence.md         # human-readable Requirement / Result / Evidence table
+  performance.json    # packing efficiency + loss-bearing tokens/sec
+  manifests/          # tokenizer_manifest, shard_index, mixture_plan, packing_report,
+                      #   contrastive_delta_s, fork_lineage, corpus_summary
+  ledgers/            # consumption_ledger, learning_ledger, opus_decision_ledger
+  checkpoints/        # main / train / resume (model+optim+rng+offset; weights regenerated)
+```
+
+`n_steps` is a cumulative target; a later `run(n_steps=N)` resumes from the saved
+`checkpoints/train` and trains only the delta (proven: incremental == monolithic).
+
+To re-fetch the corpus from scratch instead of using the committed copy:
+`python -m feature1_collect.fetch` (needs `datasets` + `huggingface_hub`).
 
 Reproducibility: each source is pinned to an exact upstream revision (recorded in
 `data/raw/fetch_log.jsonl` with a sha256), and `documents.jsonl` is written

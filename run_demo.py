@@ -80,8 +80,10 @@ _TOKENIZER_DIR: Final[str] = "tokenizer"
 _SHARD_ROOT: Final[str] = "data/shards"
 _SEQ_LEN: Final[int] = 256
 _BATCH_SIZE: Final[int] = 8
-_N_STEPS: Final[int] = 1000
+_N_STEPS: Final[int] = 300               # fast, still shows a clear learning trace
 _TRAIN_SEED: Final[str] = "v5-trainer-2026"
+_LEDGERS_DIR = "ledgers"
+_CHECKPOINTS_DIR = "checkpoints"
 _RUN_LOG = "run.log"
 _MANIFESTS_DIR = "manifests"
 _SUMMARY_FILE = "corpus_summary.json"
@@ -244,14 +246,15 @@ def stage_tokenizer(
         if tok.decode(tok.encode(text)) != text:
             raise ValueError("tokenizer round-trip failed on a cleaned document")
 
-    log.info("tokenizer", vocab=len(tok.vocab), merges=len(tok.merges))
+    log.info("tokenizer", vocab=len(tok.vocab), merges=len(tok.merges), reused=already_valid)
     log.info("tokenizer_roundtrip", lanes_checked=len(checked))
     log.passed(
-        "tokenizer_frozen",
+        "tokenizer_hash_verified",
         vocab=len(tok.vocab),
         merges=len(tok.merges),
         hash=tok.content_hash(),
     )
+    log.passed("tokenizer_frozen", vocab=len(tok.vocab), merges=len(tok.merges))
     return tok
 
 
@@ -398,7 +401,7 @@ def stage_batches(
 
 def stage_train(
     log: RunLog, *, stream: BatchStream, tokenizer_dir: str, seq_len: int,
-    n_steps: int, manifests: Path, train_checkpoint_dir: str,
+    n_steps: int, manifests: Path, ledgers: Path, train_checkpoint_dir: str,
     seed: str = _TRAIN_SEED, resume: bool = True,
 ) -> dict[str, Any]:
     """Stage 10: train the tiny MoE toward a TARGET of n_steps total.
@@ -425,8 +428,8 @@ def stage_train(
     log.info("moe_params", n=trainer.model.n_params())
     log.info("train_resume", resumed=ckpt_ok, start_step=start_step, target_steps=n_steps)
 
-    consumption = ConsumptionLedger(str(manifests / "consumption_ledger.jsonl"), append=ckpt_ok)
-    learning = LearningLedger(str(manifests / "learning_ledger.jsonl"), append=ckpt_ok)
+    consumption = ConsumptionLedger(str(ledgers / "consumption_ledger.jsonl"), append=ckpt_ok)
+    learning = LearningLedger(str(ledgers / "learning_ledger.jsonl"), append=ckpt_ok)
     last_loss = None
     for i in range(start_step, n_steps):
         batch = stream.batch(i)
@@ -442,7 +445,7 @@ def stage_train(
                     out_dir=train_checkpoint_dir)
 
     if last_loss is None:  # already at/over target: recover the final loss from the ledger
-        lines = (manifests / "learning_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+        lines = (ledgers / "learning_ledger.jsonl").read_text(encoding="utf-8").splitlines()
         last_loss = json.loads(lines[-1])["loss_nats"] if lines else 0.0
 
     delta = contrastive_delta_s(trainer.model, tok, CONTRASTIVE_PAIRS, seq_len=seq_len)
@@ -469,6 +472,7 @@ def stage_checkpoint(log: RunLog, *, make_trainer, stream, checkpoint_dir: str) 
 
 def stage_resume(log: RunLog, *, make_trainer, stream, checkpoint_dir: str) -> None:
     """Stage 12: crash at a set batch, resume, prove the next batch matches."""
+    log.info("crash_simulated", at_batch=3, checkpoint="checkpoints/resume")
     result = crash_and_resume(make_trainer, stream, total=6, crash_at=3,
                               checkpoint_dir=checkpoint_dir, seed=stream.seed)
     if not (result["no_skip_or_repeat"] and result["loss_trajectory_matched"]):
@@ -499,12 +503,12 @@ def stage_fork(log: RunLog, *, stream, checkpoint_dir: str, out_path: Path) -> N
                diverged_at=lineage["diverged_at"], diverged=lineage["diverged"])
 
 
-def stage_throughput(log: RunLog, *, make_trainer, stream, manifests: Path) -> None:
+def stage_throughput(log: RunLog, *, make_trainer, stream, manifests: Path, performance_path: Path) -> None:
     """Stage 15: deterministic packing efficiency (logged) + wall-clock throughput (file)."""
     packing_report = json.loads((manifests / "packing_report.json").read_text(encoding="utf-8"))
     throughput = measure_throughput(make_trainer, stream, n_steps=5)
     performance = build_performance(packing_report, throughput)
-    with (manifests / "performance.json").open("w", encoding="utf-8", newline="\n") as fh:
+    with performance_path.open("w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(performance, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
     log.passed(
         "throughput_measured",
@@ -513,22 +517,35 @@ def stage_throughput(log: RunLog, *, make_trainer, stream, manifests: Path) -> N
     )
 
 
+def stage_manifests(log: RunLog, *, tokenizer_dir: str, shard_root: str, manifests: Path) -> None:
+    """Copy the tokenizer + shard manifests into submission_artifacts/manifests/ and validate."""
+    import shutil
+    from feature4_shards.shard_index import INDEX_FILE, verify_shards
+    shutil.copyfile(Path(tokenizer_dir) / "tokenizer_manifest.json", manifests / "tokenizer_manifest.json")
+    shutil.copyfile(Path(shard_root) / INDEX_FILE, manifests / "shard_index.json")
+    result = verify_shards(shard_root)
+    if not result["ok"]:
+        raise ValueError("manifest validation failed (shard re-hash mismatch)")
+    log.passed("manifests_validated", shards=result["n_shards"], ok=result["ok"])
+
+
 def stage_audit(
-    log: RunLog, *, tokenizer_dir: str, shard_root: str, checkpoint_dir: str, manifests: Path,
+    log: RunLog, *, tokenizer_dir: str, shard_root: str, checkpoint_dir: str,
+    manifests: Path, ledgers: Path, evidence_dir: Path,
 ) -> dict[str, Any]:
     """Stage 16: cross-check every artifact and write the evidence bundle."""
     emitted = [e["event"] for e in log.events if e.get("level") == "PASS"]
     audit = run_audit(
-        emitted_pass_events=emitted, tokenizer_dir=tokenizer_dir,
-        shard_root=shard_root, checkpoint_dir=checkpoint_dir, manifests=str(manifests),
+        emitted_pass_events=emitted, tokenizer_dir=tokenizer_dir, shard_root=shard_root,
+        checkpoint_dir=checkpoint_dir, manifests=str(manifests), ledgers=str(ledgers),
     )
     evidence = build_evidence(
-        tokenizer_dir=tokenizer_dir, shard_root=shard_root,
-        checkpoint_dir=checkpoint_dir, manifests=str(manifests), audit=audit,
+        tokenizer_dir=tokenizer_dir, shard_root=shard_root, checkpoint_dir=checkpoint_dir,
+        manifests=str(manifests), ledgers=str(ledgers), evidence_dir=str(evidence_dir), audit=audit,
     )
-    with (manifests / "evidence.json").open("w", encoding="utf-8", newline="\n") as fh:
+    with (evidence_dir / "evidence.json").open("w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps(evidence, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
-    write_evidence_md(evidence, str(manifests / "evidence.md"))
+    write_evidence_md(evidence, str(evidence_dir / "evidence.md"))
     if not audit["all_passed"]:
         raise ValueError(f"audit failed: {audit['checks']}")
     log.passed("audit_complete", checks=len(audit["checks"]), all_passed=audit["all_passed"])
@@ -553,7 +570,10 @@ def run(
     """Run every stage. Returns a process exit code: 0 on success."""
     root = Path(artifacts_root)
     manifests = root / _MANIFESTS_DIR
-    manifests.mkdir(parents=True, exist_ok=True)
+    ledgers = root / _LEDGERS_DIR
+    checkpoints = root / _CHECKPOINTS_DIR
+    for d in (manifests, ledgers, checkpoints):
+        d.mkdir(parents=True, exist_ok=True)
 
     log = RunLog(root / _RUN_LOG)
     try:
@@ -587,11 +607,12 @@ def run(
             tokenizer_dir=tokenizer_dir,
             shard_root=shard_root,
         )
+        stage_manifests(log, tokenizer_dir=tokenizer_dir, shard_root=shard_root, manifests=manifests)
         stage_firewall(log, index=index)
         mixture_report = stage_mixture(log, index=index, summary_path=manifests / "mixture_plan.json")
         stage_opus(
             log, index=index, mixture_report=mixture_report,
-            ledger_path=manifests / "opus_decision_ledger.jsonl",
+            ledger_path=ledgers / "opus_decision_ledger.jsonl",
         )
         sequences = stage_packer(
             log, shard_root=shard_root, seq_len=seq_len,
@@ -600,24 +621,25 @@ def run(
         stream = stage_batches(log, sequences=sequences, mixture_report=mixture_report)
         train_result = stage_train(
             log, stream=stream, tokenizer_dir=tokenizer_dir, seq_len=seq_len,
-            n_steps=n_steps, manifests=manifests,
-            train_checkpoint_dir=str(root / "train_checkpoint"), resume=resume,
+            n_steps=n_steps, manifests=manifests, ledgers=ledgers,
+            train_checkpoint_dir=str(checkpoints / "train"), resume=resume,
         )
         # reproducibility harness (Features 11-14): a tiny model, exercised fast
         tok = train_result["tokenizer"]
         repro_cfg = ModelConfig(vocab_size=len(tok.vocab), d_model=32, n_layers=1,
                                 n_heads=2, n_experts=2, top_k=1, d_ff=64, seq_len=seq_len)
         make_trainer = lambda: Trainer(repro_cfg, seed="v5-repro")  # noqa: E731
-        ckpt_dir = str(root / "checkpoint")
+        ckpt_dir = str(checkpoints / "main")
         stage_checkpoint(log, make_trainer=make_trainer, stream=stream, checkpoint_dir=ckpt_dir)
         stage_resume(log, make_trainer=make_trainer, stream=stream,
-                     checkpoint_dir=str(manifests / "resume_checkpoint"))
+                     checkpoint_dir=str(checkpoints / "resume"))
         stage_replay(log, stream=stream)
         stage_fork(log, stream=stream, checkpoint_dir=ckpt_dir,
                    out_path=manifests / "fork_lineage.json")
-        stage_throughput(log, make_trainer=make_trainer, stream=stream, manifests=manifests)
-        stage_audit(log, tokenizer_dir=tokenizer_dir, shard_root=shard_root,
-                    checkpoint_dir=ckpt_dir, manifests=manifests)
+        stage_throughput(log, make_trainer=make_trainer, stream=stream, manifests=manifests,
+                         performance_path=root / "performance.json")
+        stage_audit(log, tokenizer_dir=tokenizer_dir, shard_root=shard_root, checkpoint_dir=ckpt_dir,
+                    manifests=manifests, ledgers=ledgers, evidence_dir=root)
         log.info("run_complete")
     finally:
         # even a failing stage leaves a readable log behind

@@ -1,0 +1,15 @@
+{
+  "base": "bytes-256",
+  "hash": "3eb8d6c50b13dc2733e6379d8dbd082bdd0bbb9200031b8984e18ca1b5684756",
+  "kind": "tokenizer_manifest",
+  "n_merges": 11740,
+  "special_tokens": [
+    "<pad>",
+    "<bos>",
+    "<eos>",
+    "<doc>"
+  ],
+  "trained_on": "data/clean",
+  "version": 1,
+  "vocab_size": 12000
+}

@@ -1,0 +1,257 @@
+{
+  "kind": "contrastive_delta_s",
+  "pairs": [
+    {
+      "S_minus": 227.5822,
+      "S_plus": 356.0161,
+      "delta_s": -128.4339,
+      "pair_id": "pair-0001",
+      "topic": "colonial economic impact"
+    },
+    {
+      "S_minus": 270.8284,
+      "S_plus": 291.9007,
+      "delta_s": -21.0723,
+      "pair_id": "pair-0002",
+      "topic": "1857"
+    },
+    {
+      "S_minus": 184.6113,
+      "S_plus": 274.7937,
+      "delta_s": -90.1824,
+      "pair_id": "pair-0003",
+      "topic": "Partition"
+    },
+    {
+      "S_minus": 275.9025,
+      "S_plus": 362.8204,
+      "delta_s": -86.9179,
+      "pair_id": "pair-0004",
+      "topic": "Bengal famine 1943"
+    },
+    {
+      "S_minus": 239.5669,
+      "S_plus": 307.0904,
+      "delta_s": -67.5234,
+      "pair_id": "pair-0005",
+      "topic": "East India Company"
+    },
+    {
+      "S_minus": 189.3157,
+      "S_plus": 392.0475,
+      "delta_s": -202.7318,
+      "pair_id": "pair-0006",
+      "topic": "Indian soldiers in the world wars"
+    },
+    {
+      "S_minus": 264.739,
+      "S_plus": 339.022,
+      "delta_s": -74.283,
+      "pair_id": "pair-0007",
+      "topic": "Jallianwala Bagh"
+    },
+    {
+      "S_minus": 231.4925,
+      "S_plus": 363.0202,
+      "delta_s": -131.5277,
+      "pair_id": "pair-0008",
+      "topic": "spice trade"
+    },
+    {
+      "S_minus": 209.2769,
+      "S_plus": 308.6918,
+      "delta_s": -99.4149,
+      "pair_id": "pair-0009",
+      "topic": "cotton textiles"
+    },
+    {
+      "S_minus": 140.8816,
+      "S_plus": 212.8998,
+      "delta_s": -72.0182,
+      "pair_id": "pair-0010",
+      "topic": "financial year"
+    },
+    {
+      "S_minus": 182.3822,
+      "S_plus": 275.4819,
+      "delta_s": -93.0997,
+      "pair_id": "pair-0011",
+      "topic": "lakh and crore"
+    },
+    {
+      "S_minus": 200.5379,
+      "S_plus": 248.8735,
+      "delta_s": -48.3356,
+      "pair_id": "pair-0012",
+      "topic": "share of world output"
+    },
+    {
+      "S_minus": 168.8514,
+      "S_plus": 373.6005,
+      "delta_s": -204.7491,
+      "pair_id": "pair-0013",
+      "topic": "space programme"
+    },
+    {
+      "S_minus": 180.7381,
+      "S_plus": 345.8283,
+      "delta_s": -165.0902,
+      "pair_id": "pair-0014",
+      "topic": "zero and place value"
+    },
+    {
+      "S_minus": 162.1385,
+      "S_plus": 300.083,
+      "delta_s": -137.9445,
+      "pair_id": "pair-0015",
+      "topic": "pharmaceutical industry"
+    },
+    {
+      "S_minus": 158.851,
+      "S_plus": 280.5775,
+      "delta_s": -121.7264,
+      "pair_id": "pair-0016",
+      "topic": "IT services"
+    },
+    {
+      "S_minus": 192.9048,
+      "S_plus": 258.1929,
+      "delta_s": -65.2881,
+      "pair_id": "pair-0017",
+      "topic": "languages and vernaculars"
+    },
+    {
+      "S_minus": 163.1884,
+      "S_plus": 257.5645,
+      "delta_s": -94.3761,
+      "pair_id": "pair-0018",
+      "topic": "English in India"
+    },
+    {
+      "S_minus": 164.3416,
+      "S_plus": 293.5136,
+      "delta_s": -129.172,
+      "pair_id": "pair-0019",
+      "topic": "multilingualism"
+    },
+    {
+      "S_minus": 170.1082,
+      "S_plus": 335.2939,
+      "delta_s": -165.1857,
+      "pair_id": "pair-0020",
+      "topic": "Panini's grammar"
+    },
+    {
+      "S_minus": 207.998,
+      "S_plus": 284.3298,
+      "delta_s": -76.3318,
+      "pair_id": "pair-0021",
+      "topic": "curry"
+    },
+    {
+      "S_minus": 201.7396,
+      "S_plus": 261.0907,
+      "delta_s": -59.3512,
+      "pair_id": "pair-0022",
+      "topic": "spice"
+    },
+    {
+      "S_minus": 165.3088,
+      "S_plus": 288.8776,
+      "delta_s": -123.5688,
+      "pair_id": "pair-0023",
+      "topic": "vegetarian cooking"
+    },
+    {
+      "S_minus": 165.8546,
+      "S_plus": 343.1236,
+      "delta_s": -177.2689,
+      "pair_id": "pair-0024",
+      "topic": "chai"
+    },
+    {
+      "S_minus": 164.5257,
+      "S_plus": 237.0197,
+      "delta_s": -72.494,
+      "pair_id": "pair-0025",
+      "topic": "cricket"
+    },
+    {
+      "S_minus": 173.9548,
+      "S_plus": 208.0432,
+      "delta_s": -34.0884,
+      "pair_id": "pair-0026",
+      "topic": "field hockey"
+    },
+    {
+      "S_minus": 168.2781,
+      "S_plus": 297.6927,
+      "delta_s": -129.4146,
+      "pair_id": "pair-0027",
+      "topic": "non-alignment"
+    },
+    {
+      "S_minus": 213.4423,
+      "S_plus": 314.4065,
+      "delta_s": -100.9642,
+      "pair_id": "pair-0028",
+      "topic": "universal franchise"
+    },
+    {
+      "S_minus": 181.4723,
+      "S_plus": 352.6153,
+      "delta_s": -171.143,
+      "pair_id": "pair-0029",
+      "topic": "Green Revolution"
+    },
+    {
+      "S_minus": 165.0798,
+      "S_plus": 341.6313,
+      "delta_s": -176.5515,
+      "pair_id": "pair-0030",
+      "topic": "monsoon"
+    },
+    {
+      "S_minus": 102.624,
+      "S_plus": 180.663,
+      "delta_s": -78.039,
+      "pair_id": "pair-0031",
+      "topic": "date format"
+    },
+    {
+      "S_minus": 180.864,
+      "S_plus": 317.7085,
+      "delta_s": -136.8445,
+      "pair_id": "pair-0032",
+      "topic": "Indian Standard Time"
+    },
+    {
+      "S_minus": 153.5181,
+      "S_plus": 311.3282,
+      "delta_s": -157.8101,
+      "pair_id": "pair-0033",
+      "topic": "festival dates"
+    },
+    {
+      "S_minus": 153.1203,
+      "S_plus": 250.4478,
+      "delta_s": -97.3275,
+      "pair_id": "pair-0034",
+      "topic": "Diwali"
+    },
+    {
+      "S_minus": 218.6895,
+      "S_plus": 332.5119,
+      "delta_s": -113.8224,
+      "pair_id": "pair-0035",
+      "topic": "yoga"
+    },
+    {
+      "S_minus": 171.5454,
+      "S_plus": 358.0806,
+      "delta_s": -186.5352,
+      "pair_id": "pair-0036",
+      "topic": "Ayurveda"
+    }
+  ]
+}

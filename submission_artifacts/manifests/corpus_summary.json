@@ -1,0 +1,58 @@
+{
+  "contrastive": {
+    "est_tokens": 2825,
+    "pairs": 36
+  },
+  "derived": {
+    "eval_token_fraction": 0.015417,
+    "lane_train_token_share": {
+      "code": 0.202264,
+      "indic": 0.212156,
+      "math": 0.12133,
+      "multilingual": 0.059819,
+      "web": 0.404431
+    },
+    "train_docs": 13058,
+    "train_tokens": 9890728
+  },
+  "kind": "corpus_summary",
+  "lanes": {
+    "code": {
+      "eval_docs": 0,
+      "eval_tokens": 0,
+      "train_docs": 6709,
+      "train_tokens": 2000537
+    },
+    "indic": {
+      "eval_docs": 23,
+      "eval_tokens": 124726,
+      "train_docs": 313,
+      "train_tokens": 2098381
+    },
+    "math": {
+      "eval_docs": 0,
+      "eval_tokens": 0,
+      "train_docs": 669,
+      "train_tokens": 1200040
+    },
+    "multilingual": {
+      "eval_docs": 6,
+      "eval_tokens": 30146,
+      "train_docs": 91,
+      "train_tokens": 591656
+    },
+    "web": {
+      "eval_docs": 0,
+      "eval_tokens": 0,
+      "train_docs": 5276,
+      "train_tokens": 4000114
+    }
+  },
+  "totals": {
+    "docs": 13087,
+    "eval_docs": 29,
+    "eval_tokens": 154872,
+    "tokens": 10045600
+  },
+  "version": 1
+}

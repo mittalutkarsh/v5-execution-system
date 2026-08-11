@@ -1,0 +1,45 @@
+[INFO] run_start
+[INFO] corpus_lane lane=code train_docs=6709 eval_docs=0 train_tokens=2000537 eval_tokens=0
+[INFO] corpus_lane lane=indic train_docs=313 eval_docs=23 train_tokens=2098381 eval_tokens=124726
+[INFO] corpus_lane lane=math train_docs=669 eval_docs=0 train_tokens=1200040 eval_tokens=0
+[INFO] corpus_lane lane=multilingual train_docs=91 eval_docs=6 train_tokens=591656 eval_tokens=30146
+[INFO] corpus_lane lane=web train_docs=5276 eval_docs=0 train_tokens=4000114 eval_tokens=0
+[INFO] corpus_summary_written file=corpus_summary.json
+[PASS] corpus_loaded total=13087 eval=29 contrastive=36
+[INFO] clean_stage stage=normalize input=13058 kept=13058 dropped=0
+[INFO] clean_stage stage=exact_dup input=13058 kept=13058 dropped=0
+[INFO] clean_stage stage=quality input=13058 kept=13054 dropped=4
+[INFO] clean_stage stage=near_dup input=13054 kept=13035 dropped=19
+[INFO] clean_stage stage=pii input=13035 kept=13035 dropped=0
+[INFO] clean_stage stage=decontam input=13035 kept=13026 dropped=9
+[INFO] pii_redactions n=534
+[PASS] corpus_cleaned kept=13026 dropped=32
+[INFO] tokenizer vocab=12000 merges=11740 reused=True
+[INFO] tokenizer_roundtrip lanes_checked=5
+[PASS] tokenizer_hash_verified vocab=12000 merges=11740 hash=3eb8d6c50b13dc2733e6379d8dbd082bdd0bbb9200031b8984e18ca1b5684756
+[PASS] tokenizer_frozen vocab=12000 merges=11740
+[INFO] shards_split split=eval shards=3 tokens=113811
+[INFO] shards_split split=train shards=168 tokens=10309451
+[PASS] shards_written shards=171 tokens=10423262 verified=True
+[PASS] manifests_validated shards=171 ok=True
+[PASS] eval_shard_blocked blocked=3 eval_shards=3 train_shards=168
+[INFO] mixture_written file=mixture_plan.json
+[PASS] mixture_compiled phases=2 floors_met=True
+[INFO] opus_ledger_written file=opus_decision_ledger.jsonl
+[PASS] opus_selected accepted=46 deferred=0 rejected=122 floors_met=True
+[INFO] packing_written file=packing_report.json
+[PASS] sequences_packed seqs=12205 efficiency=0.8892
+[PASS] batch_stream_ready pool=12205 batch_size=8 reproducible=True
+[INFO] moe_params n=3766536
+[INFO] train_resume resumed=False start_step=0 target_steps=300
+[PASS] trained steps=300 resumed_from=0 final_loss=8.242889
+[PASS] contrastive_delta_s pairs=36
+[PASS] checkpoint_saved step=4 ledger_offset=4 verified=True
+[INFO] crash_simulated at_batch=3 checkpoint=checkpoints/resume
+[PASS] resume_next_batch_matched offset=3 no_skip_or_repeat=True loss_matched=True
+[PASS] replay_hash_matched interval=1-5 checked=4 matched=True
+[PASS] fork_lineage_recorded branch=branch-a diverged_at=4 diverged=True
+[PASS] throughput_measured efficiency=0.8892 loss_tokens=2765120
+[PASS] audit_complete checks=6 all_passed=True
+[INFO] evidence_written file=evidence.json
+[INFO] run_complete
