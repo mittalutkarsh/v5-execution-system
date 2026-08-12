@@ -170,6 +170,17 @@ run_demo.py           one command; runs all sixteen stages
 tokenizer/            the frozen artifact: vocab.json, merges.txt, manifest
 ```
 
+## Learning trace
+
+![Learning curve](figures/loss_curve.png)
+
+A 3000-step run on the committed corpus. Loss (cross-entropy, in nats) falls from
+about 9.5, the value of a uniform distribution over the 12,000-token vocabulary
+(`ln 12000 = 9.39`, the dashed line), toward about 3.5. Every point is linked
+through the learning ledger to the batch, and through the batch to the source
+documents, that produced it. The default `run_demo.py` trains fewer steps so it
+reproduces quickly; the curve keeps descending with more.
+
 ## Notes and limitations
 
 The crash, resume, replay, and fork demonstrations use a small model against the
